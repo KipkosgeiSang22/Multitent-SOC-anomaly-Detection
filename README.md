@@ -6,7 +6,7 @@ A full-stack Security Operations Center platform built for Managed Security Serv
 
 ## Overview
 
-The platform is designed around three user roles: **superadmin**, **analyst**, and **client**. Each role gets its own portal with a tailored set of capabilities. Superadmins manage the full environment — onboarding clients, assigning analysts, handling payments. Analysts investigate events and anomalies, manage detection rules, and interact with Graylog. Clients get a read-only view of their own security posture.
+The platform is designed around three user roles: **superadmin**, **analyst**, and **client**. Each role gets its own portal with a tailored set of capabilities. Superadmins manage the full environment — onboarding clients, assigning analysts, handling payments. Analysts investigate events and anomalies, manage detection rules, and interact with Graylog.The platform is not limited to graylog, it can work with other siem tools as well. Clients get a read-only view of their own security posture.
 
 Detection runs in two layers: rule-based (Layer 1) for known patterns like brute force or LOLBin activity, and ML-based (Layer 2) for behavioural anomalies across authentication, account management, and process creation event categories. Models can be retrained per-client and rolled back if a new model performs worse.
 
