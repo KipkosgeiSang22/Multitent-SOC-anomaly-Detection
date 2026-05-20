@@ -1,0 +1,40 @@
+.page { padding: 2rem; max-width: 900px; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.title { font-size: 13px; font-weight: 700; letter-spacing: 0.15em; color: var(--text-primary, #e2e8f0); margin: 0; }
+.search { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary, #e2e8f0); padding: 6px 12px; border-radius: 6px; font-size: 12px; width: 220px; }
+.search::placeholder { color: rgba(255,255,255,0.3); }
+.errorMsg { color: #ef4444; font-size: 13px; }
+.loading { color: var(--text-muted, #64748b); font-size: 13px; }
+.empty { color: var(--text-muted, #64748b); font-size: 13px; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.card { border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1rem 1.25rem; background: rgba(255,255,255,0.02); cursor: pointer; transition: background 0.15s; }
+.card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
+.cardTop { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.source { font-size: 11px; color: #06b6d4; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.sev { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.sevCritical { background: rgba(239,68,68,0.15); color: #ef4444; }
+.sevHigh { background: rgba(249,115,22,0.15); color: #f97316; }
+.sevMedium { background: rgba(234,179,8,0.15); color: #eab308; }
+.sevLow { background: rgba(100,116,139,0.15); color: #64748b; }
+.pubTime { font-size: 11px; color: var(--text-muted, #64748b); margin-left: auto; }
+.cardTitle { font-size: 13px; font-weight: 500; color: var(--text-primary, #e2e8f0); margin: 0 0 0.4rem; line-height: 1.4; }
+.cardSummary { font-size: 12px; color: var(--text-muted, #64748b); margin: 0 0 0.5rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cardTags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 10px; background: rgba(168,85,247,0.1); color: #a855f7; padding: 2px 6px; border-radius: 4px; }
+.tagSector { background: rgba(16,185,129,0.1); color: #10b981; }
+
+.modalBackdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { background: #1e293b; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 1.5rem; width: 560px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+.modalHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.modalTitle { font-size: 11px; color: #06b6d4; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+.modalClose { background: none; border: none; color: #64748b; font-size: 16px; cursor: pointer; }
+.modalItemTitle { font-size: 15px; font-weight: 500; color: #e2e8f0; margin: 0 0 0.75rem; line-height: 1.4; }
+.modalSummary { font-size: 13px; color: #94a3b8; margin: 0 0 1rem; line-height: 1.6; }
+.modalMeta { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; flex-wrap: wrap; }
+.metaItem { font-size: 11px; color: #64748b; }
+.link { font-size: 11px; color: #06b6d4; text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.iocBlock, .tagsBlock { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; margin-top: 1rem; }
+.sectionLabel { font-size: 10px; letter-spacing: 0.12em; color: #64748b; margin: 0 0 0.5rem; }
+.iocJson { font-size: 11px; color: #64748b; background: rgba(255,255,255,0.03); border-radius: 6px; padding: 0.75rem; margin: 0; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }

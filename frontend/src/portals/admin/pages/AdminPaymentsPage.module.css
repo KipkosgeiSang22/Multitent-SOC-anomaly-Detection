@@ -1,0 +1,64 @@
+/* src/portals/admin/pages/AdminPaymentsPage.module.css */
+.container { padding: 24px; font-family: var(--font-sans); }
+.header h2 { font-family: var(--font-mono); color: var(--red); margin: 0 0 4px 0; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 24px 0; }
+
+/* Toolbar */
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.select { background: var(--bg-surface); border: 1px solid var(--border-base); color: var(--text-primary); padding: 8px 10px; font-family: var(--font-mono); font-size: 12px; min-width: 160px; }
+.btnPrimary { background: var(--red); color: white; font-family: var(--font-mono); border: none; padding: 10px 16px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; }
+.btnSec { background: var(--bg-elevated); border: 1px solid var(--border-base); color: var(--text-primary); font-family: var(--font-mono); padding: 8px 14px; cursor: pointer; font-size: 12px; }
+
+/* Error bar */
+.errorBar { background: rgba(229,67,75,0.1); border: 1px solid var(--red); color: var(--red); padding: 10px 14px; font-family: var(--font-mono); font-size: 13px; margin-bottom: 16px; }
+
+/* Table */
+.tableWrapper { background: var(--bg-surface); border: 1px solid var(--border-base); overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; text-align: left; min-width: 980px; }
+.table th { background: var(--bg-elevated); padding: 10px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-base); white-space: nowrap; }
+.table td { padding: 10px 12px; border-bottom: 1px solid var(--border-base); font-size: 13px; vertical-align: middle; }
+.table tr:last-child td { border-bottom: none; }
+.rowCompleted { background: rgba(47,184,122,0.04); }
+.mono { font-family: var(--font-mono); font-size: 12px; }
+.emptyRow { text-align: center; color: var(--text-muted); font-family: var(--font-mono); padding: 40px; }
+.loader { font-family: var(--font-mono); color: var(--text-muted); padding: 32px; text-align: center; }
+
+/* Status badges */
+.badge { font-family: var(--font-mono); font-size: 11px; padding: 3px 7px; border: 1px solid; display: inline-block; }
+.badge_completed { color: var(--green); border-color: rgba(47,184,122,0.4); background: rgba(47,184,122,0.08); }
+.badge_pending { color: var(--amber); border-color: rgba(245,166,35,0.4); background: var(--amber-glow); }
+.badge_failed { color: var(--red); border-color: rgba(229,67,75,0.4); background: rgba(229,67,75,0.08); }
+.badge_cancelled { color: var(--text-muted); border-color: var(--border-base); background: transparent; }
+
+/* Type badge */
+.typeBadge { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); background: var(--bg-elevated); border: 1px solid var(--border-base); padding: 2px 6px; }
+
+/* Check button (per pending row) */
+.checkBtn { background: var(--bg-elevated); border: 1px solid var(--border-base); color: var(--amber); font-family: var(--font-mono); font-size: 11px; padding: 4px 8px; cursor: pointer; white-space: nowrap; }
+.checkBtn:hover { border-color: var(--amber); }
+
+/* Summary strip */
+.summaryStrip { margin-top: 12px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+
+/* Modal overlay */
+.overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.82); display: flex; align-items: center; justify-content: center; z-index: 5000; }
+.modal { background: var(--bg-surface); border: 1px solid var(--border-active); width: 480px; max-width: 95vw; padding: 28px; display: flex; flex-direction: column; gap: 16px; max-height: 90vh; overflow-y: auto; }
+.modal h3 { font-family: var(--font-mono); color: var(--red); margin: 0 0 4px 0; font-size: 15px; }
+
+/* Modal fields */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+.fieldInput { background: var(--bg-base); border: 1px solid var(--border-base); color: var(--text-primary); padding: 8px; font-family: var(--font-mono); font-size: 13px; width: 100%; box-sizing: border-box; }
+.fieldInput:focus { outline: none; border-color: var(--red); }
+.fieldRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hint { color: var(--text-muted); font-size: 10px; font-weight: normal; }
+
+/* Modal buttons */
+.modalBtns { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+.btnCancel { background: transparent; border: 1px solid var(--border-base); color: var(--text-secondary); padding: 8px 16px; font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
+.btnCancel:hover { border-color: var(--border-active); }
+
+/* Result boxes */
+.successBox { background: rgba(47,184,122,0.1); border: 1px solid var(--green); color: var(--green); padding: 12px 14px; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
+.errorBox { background: rgba(229,67,75,0.1); border: 1px solid var(--red); color: var(--red); padding: 12px 14px; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }

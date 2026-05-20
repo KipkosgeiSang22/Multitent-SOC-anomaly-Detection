@@ -1,0 +1,638 @@
+/* AdminDashboardPage.module.css
+   Admin portal — var(--red) accent, IBM Plex Mono + IBM Plex Sans
+   Staggered card entrance, scanner-line glow on accent card.
+*/
+
+/* ── Page shell ─────────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  padding-bottom: 48px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 28px 32px 24px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.liveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--red);
+  background: rgba(229, 67, 75, 0.08);
+  border: 1px solid rgba(229, 67, 75, 0.25);
+  border-radius: 3px;
+  padding: 3px 8px;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 6px var(--red);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.refreshTime {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.refreshBtn {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--red);
+  background: rgba(229, 67, 75, 0.08);
+  border: 1px solid rgba(229, 67, 75, 0.25);
+  border-radius: 4px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.refreshBtn:hover {
+  background: rgba(229, 67, 75, 0.16);
+  border-color: rgba(229, 67, 75, 0.5);
+}
+
+/* ── Stat grid ───────────────────────────────────────────────────────────── */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 0 32px 32px;
+}
+
+/* ── Stat card base ──────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: 6px;
+  padding: 20px 22px 18px;
+  overflow: hidden;
+  animation: cardIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Variants */
+.card_default {
+  border-color: var(--border-base);
+}
+
+.card_default:hover {
+  border-color: var(--border-active);
+}
+
+.card_accent {
+  border-color: rgba(229, 67, 75, 0.35);
+  background: linear-gradient(
+    145deg,
+    rgba(229, 67, 75, 0.06) 0%,
+    var(--bg-surface) 60%
+  );
+}
+
+.card_accent:hover {
+  border-color: rgba(229, 67, 75, 0.6);
+}
+
+.card_warning {
+  border-color: rgba(245, 166, 35, 0.3);
+  background: linear-gradient(
+    145deg,
+    rgba(245, 166, 35, 0.04) 0%,
+    var(--bg-surface) 60%
+  );
+}
+
+.card_warning:hover {
+  border-color: rgba(245, 166, 35, 0.55);
+}
+
+.card_danger {
+  border-color: rgba(229, 67, 75, 0.45);
+  background: linear-gradient(
+    145deg,
+    rgba(229, 67, 75, 0.09) 0%,
+    var(--bg-surface) 50%
+  );
+}
+
+.card_danger:hover {
+  border-color: rgba(229, 67, 75, 0.7);
+}
+
+/* Glow layer — visible on accent + danger */
+.cardGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.card_accent .cardGlow,
+.card_danger .cardGlow {
+  background: radial-gradient(
+    ellipse at top left,
+    rgba(229, 67, 75, 0.08) 0%,
+    transparent 60%
+  );
+  opacity: 1;
+}
+
+.card_warning .cardGlow {
+  background: radial-gradient(
+    ellipse at top left,
+    rgba(245, 166, 35, 0.06) 0%,
+    transparent 60%
+  );
+  opacity: 1;
+}
+
+/* Card internals */
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cardIcon {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--red);
+  opacity: 0.7;
+  line-height: 1;
+}
+
+.card_warning .cardIcon {
+  color: var(--amber);
+}
+
+.card_default .cardIcon {
+  color: var(--text-muted);
+}
+
+.cardLabel {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.cardValue {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.card_accent .cardValue,
+.card_danger .cardValue {
+  color: var(--red);
+}
+
+.card_warning .cardValue {
+  color: var(--amber);
+}
+
+.cardSub {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ── Section ─────────────────────────────────────────────────────────────── */
+
+.section {
+  padding: 0 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.sectionLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.sectionPill {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+}
+
+.sectionPillOk {
+  color: var(--green);
+  background: rgba(47, 184, 122, 0.08);
+  border-color: rgba(47, 184, 122, 0.2);
+}
+
+.sectionPillDanger {
+  color: var(--red);
+  background: rgba(229, 67, 75, 0.08);
+  border-color: rgba(229, 67, 75, 0.25);
+}
+
+/* ── Scheduler table ─────────────────────────────────────────────────────── */
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-base);
+  border-radius: 6px;
+}
+
+.schedTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.schedTh {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-base);
+  background: var(--bg-surface);
+  white-space: nowrap;
+}
+
+.schedRow {
+  cursor: default;
+  border-bottom: 1px solid var(--border-base);
+  animation: rowIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: background 0.1s;
+}
+
+.schedRow:last-child {
+  border-bottom: none;
+}
+
+.schedRow:hover {
+  background: var(--bg-surface);
+}
+
+.schedRowFailed {
+  background: rgba(229, 67, 75, 0.04);
+}
+
+.schedRowFailed:hover {
+  background: rgba(229, 67, 75, 0.07);
+}
+
+.schedRowExpanded {
+  background: var(--bg-surface);
+}
+
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.schedTd {
+  padding: 11px 16px;
+  vertical-align: middle;
+}
+
+/* Process name cell */
+.schedName {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.schedDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.schedDotOk {
+  background: var(--green);
+  box-shadow: 0 0 5px var(--green);
+}
+
+.schedDotFail {
+  background: var(--red);
+  box-shadow: 0 0 5px var(--red);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.schedNameText {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* Status pill */
+.statusPill {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+
+.statusOk {
+  color: var(--green);
+  background: rgba(47, 184, 122, 0.08);
+  border-color: rgba(47, 184, 122, 0.2);
+}
+
+.statusFail {
+  color: var(--red);
+  background: rgba(229, 67, 75, 0.1);
+  border-color: rgba(229, 67, 75, 0.28);
+}
+
+/* Time cells */
+.schedTime {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.schedAgo {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Numeric cells */
+.schedNum {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.schedNumAmber {
+  color: var(--amber);
+}
+
+.schedDuration {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.schedMuted {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Error toggle button */
+.errorToggle {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--red);
+  background: rgba(229, 67, 75, 0.08);
+  border: 1px solid rgba(229, 67, 75, 0.25);
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+
+.errorToggle:hover {
+  background: rgba(229, 67, 75, 0.16);
+}
+
+/* Error expanded row */
+.schedErrorRow {
+  border-bottom: 1px solid var(--border-base);
+}
+
+.schedErrorCell {
+  padding: 0;
+  background: rgba(229, 67, 75, 0.04);
+}
+
+.schedErrorInner {
+  padding: 12px 20px 14px 48px;
+}
+
+.schedErrorLabel {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--red);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.schedErrorPre {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.55;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(229, 67, 75, 0.15);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+/* ── Empty / error states ────────────────────────────────────────────────── */
+
+.emptyScheduler {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-base);
+  border-radius: 6px;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 80px 32px;
+}
+
+.errorIcon {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  color: var(--red);
+  opacity: 0.5;
+}
+
+.errorMsg {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.retryBtn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--red);
+  background: rgba(229, 67, 75, 0.08);
+  border: 1px solid rgba(229, 67, 75, 0.3);
+  border-radius: 4px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.retryBtn:hover {
+  background: rgba(229, 67, 75, 0.16);
+}
+
+/* ── Loading skeletons ───────────────────────────────────────────────────── */
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 0 32px 32px;
+}
+
+.skeletonCard {
+  height: 110px;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  animation: shimmer 1.4s ease-in-out infinite both;
+}
+
+.skeletonTable {
+  height: 220px;
+  margin: 0 32px;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  animation: shimmer 1.4s ease-in-out 0.2s infinite both;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.8; }
+}

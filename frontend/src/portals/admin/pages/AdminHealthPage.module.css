@@ -1,0 +1,18 @@
+/* src/portals/admin/pages/AdminHealthPage.module.css */
+.container { padding: 24px; font-family: var(--font-sans); }
+.header h2 { font-family: var(--font-mono); color: var(--red); margin: 0 0 4px 0; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 24px 0; }
+.grid { display: flex; flex-direction: column; gap: 20px; }
+.card { background: var(--bg-surface); border: 1px solid var(--border-base); padding: 20px; border-radius: 2px; }
+.cardFault { border-color: var(--red); background: rgba(229,67,75,0.02); }
+.cardHeader { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-base); padding-bottom: 12px; margin-bottom: 14px; }
+.processName { font-family: var(--font-mono); font-weight: bold; color: var(--text-primary); font-size: 15px; }
+.badge { font-family: var(--font-mono); font-size: 11px; font-weight: bold; padding: 2px 6px; }
+.ok { background: rgba(47,184,122,0.15); color: var(--green); }
+.error { background: var(--red); color: white; }
+.metaRow { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; color: var(--text-secondary); }
+.mono { font-family: var(--font-mono); color: var(--text-primary); }
+.errorStack { background: var(--bg-base); border: 1px solid var(--red); padding: 14px; margin-top: 16px; border-radius: 2px; }
+.errorStack h5 { color: var(--red); margin: 0 0 8px 0; font-family: var(--font-mono); font-size: 12px; }
+.errorStack pre { margin: 0; font-family: var(--font-mono); font-size: 12px; color: #f5a623; overflow-x: auto; white-space: pre-wrap; }
+.loader { font-family: var(--font-mono); color: var(--text-muted); padding: 32px; }

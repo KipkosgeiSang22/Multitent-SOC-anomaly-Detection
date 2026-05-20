@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Core palette */
+  --bg-base:        #0a0b0d;
+  --bg-surface:     #0f1115;
+  --bg-elevated:    #161820;
+  --bg-overlay:     #1e2028;
+  --bg-input:       #13151a;
+
+  /* Borders */
+  --border-dim:     #1e2230;
+  --border-base:    #252838;
+  --border-active:  #3a3f5c;
+
+  /* Text */
+  --text-primary:   #e8eaf0;
+  --text-secondary: #8b90a8;
+  --text-muted:     #4a5068;
+  --text-inverse:   #0a0b0d;
+
+  /* Accents */
+  --amber:          #f5a623;
+  --amber-dim:      #7d5512;
+  --amber-glow:     rgba(245, 166, 35, 0.12);
+  --red:            #e5434b;
+  --red-dim:        #6b1f24;
+  --red-glow:       rgba(229, 67, 75, 0.12);
+  --green:          #2fb87a;
+  --green-dim:      #124f32;
+  --green-glow:     rgba(47, 184, 122, 0.12);
+  --blue:           #4a90d9;
+  --blue-dim:       #1a3a5c;
+  --blue-glow:      rgba(74, 144, 217, 0.10);
+  --purple:         #9b6dff;
+  --purple-dim:     #3d2470;
+
+  /* Typography */
+  --font-mono:      'IBM Plex Mono', 'Courier New', monospace;
+  --font-sans:      'IBM Plex Sans', 'Helvetica Neue', sans-serif;
+
+  /* Spacing */
+  --radius-sm:      3px;
+  --radius-md:      6px;
+  --radius-lg:      10px;
+
+  /* Shadows */
+  --shadow-sm:      0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md:      0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg:      0 8px 32px rgba(0,0,0,0.6);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Focus */
+*:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--amber-glow);
+  color: var(--amber);
+}
+
+/* Utility classes */
+.mono { font-family: var(--font-mono); }
+
+/* Scanline overlay for terminal feel */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}

@@ -1,0 +1,27 @@
+.page { padding: 2rem; max-width: 1200px; }
+.header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+.title { font-size: 13px; font-weight: 700; letter-spacing: 0.15em; color: var(--text-primary, #e2e8f0); margin: 0; }
+.live { font-size: 11px; color: #10b981; letter-spacing: 0.1em; }
+.loading { color: var(--text-muted, #64748b); font-size: 13px; }
+.errorMsg { color: #ef4444; font-size: 13px; }
+
+.statsGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+.statCard { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1.25rem; }
+.statLabel { font-size: 10px; letter-spacing: 0.12em; color: var(--text-muted, #64748b); margin: 0 0 0.5rem; }
+.statValue { font-size: 28px; font-weight: 700; color: var(--text-primary, #e2e8f0); margin: 0; font-variant-numeric: tabular-nums; }
+.statSub { font-size: 11px; color: var(--text-muted, #64748b); margin: 0.25rem 0 0; }
+
+.sectionTitle { font-size: 11px; letter-spacing: 0.12em; color: var(--text-muted, #64748b); margin: 0 0 1rem; }
+.schedulerGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.schedulerCard { border-radius: 8px; padding: 1rem 1.25rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); }
+.schedOk { border-left: 3px solid #10b981; }
+.schedFail { border-left: 3px solid #ef4444; }
+.schedHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.schedName { font-size: 13px; font-weight: 600; color: var(--text-primary, #e2e8f0); }
+.schedBadge { font-size: 11px; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+.badgeOk { background: rgba(16,185,129,0.15); color: #10b981; }
+.badgeFail { background: rgba(239,68,68,0.15); color: #ef4444; }
+.schedMeta { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted, #64748b); margin-bottom: 0.25rem; }
+.schedDetail { font-size: 11px; color: var(--text-muted, #64748b); margin: 0.25rem 0 0; }
+.schedError { font-size: 11px; color: #ef4444; margin: 0.5rem 0 0; white-space: pre-wrap; word-break: break-all; }
+.empty { font-size: 13px; color: var(--text-muted, #64748b); }

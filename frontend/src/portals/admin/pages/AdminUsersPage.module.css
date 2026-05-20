@@ -1,0 +1,40 @@
+/* src/portals/admin/pages/AdminUsersPage.module.css */
+.container { padding: 24px; font-family: var(--font-sans); }
+.header h2 { font-family: var(--font-mono); color: var(--red); margin: 0 0 4px 0; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 24px 0; }
+.criticalAlert { background: rgba(229,67,75,0.1); border: 1px solid var(--red); padding: 20px; margin-bottom: 24px; border-left: 4px solid var(--red); }
+.criticalAlert h3 { font-family: var(--font-mono); color: var(--red); margin: 0 0 8px 0; font-size: 14px; }
+.tokenBox { background: var(--bg-base); padding: 12px; font-family: var(--font-mono); font-size: 16px; color: var(--text-primary); border: 1px solid var(--border-base); margin: 12px 0; letter-spacing: 1px; }
+.criticalAlert button { background: var(--red); color: white; border: none; font-family: var(--font-mono); padding: 8px 14px; cursor: pointer; }
+.actionRow { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+.filters { display: flex; gap: 12px; }
+.filters input { background: var(--bg-surface); border: 1px solid var(--border-base); padding: 8px 12px; color: var(--text-primary); width: 260px; }
+.filters select { background: var(--bg-surface); border: 1px solid var(--border-base); color: var(--text-primary); padding: 8px; font-family: var(--font-mono); }
+.buttons { display: flex; gap: 12px; }
+.btnPrimary { background: var(--red); color: white; font-family: var(--font-mono); border: none; padding: 10px 16px; cursor: pointer; font-weight: bold; }
+.btnSec { background: var(--bg-elevated); border: 1px solid var(--border-base); color: var(--text-primary); font-family: var(--font-mono); padding: 10px 16px; cursor: pointer; }
+.tableWrapper { background: var(--bg-surface); border: 1px solid var(--border-base); }
+.table { width: 100%; border-collapse: collapse; text-align: left; }
+.table th { background: var(--bg-elevated); padding: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-base); }
+.table td { padding: 12px; border-bottom: 1px solid var(--border-base); font-size: 14px; }
+.mono { font-family: var(--font-mono); }
+.roleBadge { background: var(--bg-elevated); padding: 2px 6px; font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--border-base); }
+.activeText { color: var(--green); font-weight: bold; }
+.deadText { color: var(--text-muted); }
+.cellActions { display: flex; gap: 8px; }
+.cellActions button { background: var(--bg-elevated); border: 1px solid var(--border-base); color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; padding: 4px 8px; cursor: pointer; }
+.cellActions .warnBtn { color: var(--amber); border-color: rgba(245,166,35,0.3); }
+.cellActions .dangerBtn { color: var(--red); border-color: rgba(229,67,75,0.3); }
+.cellActions button:disabled { color: var(--text-muted); border-color: var(--border-base); cursor: not-allowed; }
+.overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 5000; }
+.modal { background: var(--bg-surface); border: 1px solid var(--border-active); width: 440px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.modal h3 { font-family: var(--font-mono); color: var(--red); margin: 0 0 8px 0; font-size: 15px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+.field input, .field select { background: var(--bg-base); border: 1px solid var(--border-base); color: var(--text-primary); padding: 8px; }
+.checkGroup { display: flex; align-items: center; font-size: 13px; font-family: var(--font-mono); color: var(--text-secondary); }
+.checkGroup input { margin-right: 8px; }
+.modalBtns { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+.modalBtns button { background: transparent; border: 1px solid var(--border-base); color: var(--text-secondary); padding: 8px 14px; font-family: var(--font-mono); cursor: pointer; }
+.modalBtns .btnPrimary { background: var(--red); color: white; border: none; }
+.loader { font-family: var(--font-mono); color: var(--text-muted); padding: 32px; }

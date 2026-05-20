@@ -1,0 +1,18 @@
+/* src/portals/client/pages/AnomaliesPage.module.css */
+.container { padding: 24px; font-family: var(--font-sans); }
+.header h2 { font-family: var(--font-mono); color: var(--blue); margin: 0 0 4px 0; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 24px 0; }
+.filterDeck { display: flex; gap: 20px; background: var(--bg-surface); border: 1px solid var(--border-base); padding: 14px 20px; margin-bottom: 24px; }
+.controlGroup { display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 12px; }
+.controlGroup select { background: var(--bg-base); border: 1px solid var(--border-base); color: var(--text-primary); padding: 6px 12px; font-family: var(--font-mono); }
+.tableWrapper { background: var(--bg-surface); border: 1px solid var(--border-base); }
+.table { width: 100%; border-collapse: collapse; text-align: left; }
+.table th { background: var(--bg-elevated); padding: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-base); }
+.table td { padding: 14px 12px; border-bottom: 1px solid var(--border-base); font-size: 14px; vertical-align: top; }
+.mono { font-family: var(--font-mono); }
+.catBadge { font-family: var(--font-mono); font-size: 11px; background: var(--bg-elevated); padding: 2px 6px; border: 1px solid var(--border-base); }
+.typeBadge { font-family: var(--font-mono); font-size: 11px; color: var(--blue); font-weight: bold; }
+.detailsPayload { background: var(--bg-base); padding: 10px; border: 1px solid var(--border-base); max-height: 125px; overflow-y: auto; }
+.detailsPayload pre { margin: 0; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); white-space: pre-wrap; }
+.empty { text-align: center; color: var(--text-muted); font-family: var(--font-mono); padding: 40px; }
+.loader { font-family: var(--font-mono); color: var(--text-muted); padding: 32px; }

@@ -1,0 +1,18 @@
+/* src/portals/admin/pages/AdminDashboardPage.module.css */
+.container { padding: 24px; font-family: var(--font-sans); }
+.header h2 { font-family: var(--font-mono); color: var(--red); margin: 0 0 4px 0; letter-spacing: -0.5px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 28px 0; }
+.statsGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.statCard { background: var(--bg-surface); border: 1px solid var(--border-base); padding: 20px; border-radius: 2px; }
+.cardLabel { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
+.cardVal { font-family: var(--font-mono); font-size: 28px; font-weight: bold; }
+.schedulerSection h3 { font-family: var(--font-mono); font-size: 14px; color: var(--text-primary); margin: 0 0 16px 0; }
+.tableWrapper { background: var(--bg-surface); border: 1px solid var(--border-base); }
+.table { width: 100%; border-collapse: collapse; }
+.table th { background: var(--bg-elevated); padding: 12px; text-align: left; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); border-bottom: 1px solid var(--border-base); }
+.table td { padding: 14px 12px; border-bottom: 1px solid var(--border-base); font-size: 14px; }
+.mono { font-family: var(--font-mono); }
+.statusBadge { font-family: var(--font-mono); font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 2px; }
+.ok { background: rgba(47,184,122,0.15); color: var(--green); }
+.fault { background: rgba(229,67,75,0.15); color: var(--red); }
+.loader { font-family: var(--font-mono); color: var(--text-muted); padding: 40px; }

@@ -1,0 +1,231 @@
+/* src/portals/shared/RetrainModelsPage.module.css */
+.container {
+  padding: 24px;
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+.header h2 {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+.controlPanel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  padding: 20px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.field select, .field input {
+  width: 100%;
+  background: var(--bg-base);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  border-radius: 2px;
+}
+.field select:focus, .field input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.actionRow {
+  display: flex;
+  gap: 12px;
+}
+.primaryButton {
+  background: var(--accent);
+  color: var(--bg-base);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+.primaryButton:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+}
+.rollbackButton {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid var(--red);
+  font-family: var(--font-mono);
+  padding: 10px 20px;
+  cursor: pointer;
+}
+.rollbackButton:hover {
+  background: rgba(229, 67, 75, 0.1);
+}
+.tableWrapper {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.table th {
+  background: var(--bg-elevated);
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-base);
+}
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-base);
+  font-size: 14px;
+}
+.mono {
+  font-family: var(--font-mono);
+}
+.badge {
+  background: var(--bg-elevated);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border: 1px solid var(--border-base);
+}
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.pagination button {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+  padding: 6px 16px;
+  cursor: pointer;
+}
+.pagination button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.executionBox {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  padding: 20px;
+  margin-top: 24px;
+}
+.executionBox h3 {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+.notesTextarea {
+  width: 100%;
+  height: 80px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+  padding: 12px;
+  font-family: var(--font-mono);
+  resize: none;
+  margin-bottom: 16px;
+}
+.commitButton {
+  background: var(--green);
+  color: var(--bg-base);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+}
+.statusModal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.modalContent {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-active);
+  padding: 32px;
+  width: 500px;
+  border-radius: 4px;
+}
+.modalContent h3 {
+  font-family: var(--font-mono);
+  margin-bottom: 20px;
+  font-size: 16px;
+  border-bottom: 1px solid var(--border-base);
+  padding-bottom: 10px;
+}
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+}
+.statusLabel { color: var(--text-secondary); }
+.statusVal { font-weight: bold; }
+.complete { color: var(--green); }
+.failed { color: var(--red); }
+.statusMessage {
+  background: var(--bg-base);
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border-left: 2px solid var(--accent);
+  margin: 16px 0;
+}
+.closeModalBtn {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+  padding: 10px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+.lockedContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+}
+.lockBox {
+  background: var(--bg-surface);
+  border: 1px solid var(--red);
+  padding: 40px;
+  text-align: center;
+  max-width: 450px;
+}
+.lockIcon { font-size: 48px; display: block; margin-bottom: 16px; }
+.lockBox h3 { font-family: var(--font-mono); color: var(--red); margin-bottom: 12px; }
+.lockBox p { color: var(--text-secondary); font-size: 14px; }

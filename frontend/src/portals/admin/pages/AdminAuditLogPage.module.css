@@ -1,0 +1,22 @@
+/* src/portals/admin/pages/AdminAuditLogPage.module.css */
+.container { padding: 24px; font-family: var(--font-sans); }
+.header { position: relative; margin-bottom: 24px; }
+.header h2 { font-family: var(--font-mono); color: var(--red); margin: 0 0 4px 0; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin: 0; }
+.dlBtn { position: absolute; right: 0; top: 4px; background: transparent; border: 1px solid var(--red); color: var(--red); font-family: var(--font-mono); padding: 10px 16px; cursor: pointer; }
+.dlBtn:hover { background: rgba(229,67,75,0.1); }
+.filterBar { background: var(--bg-surface); border: 1px solid var(--border-base); padding: 16px; margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+.filterBar input { background: var(--bg-base); border: 1px solid var(--border-base); color: var(--text-primary); padding: 8px 12px; width: 140px; }
+.filterBar .mono { font-family: var(--font-mono); width: 220px; }
+.filterBar button { background: var(--bg-elevated); border: 1px solid var(--border-base); color: var(--text-primary); font-family: var(--font-mono); padding: 8px 16px; cursor: pointer; }
+.tableWrapper { background: var(--bg-surface); border: 1px solid var(--border-base); overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; text-align: left; }
+.table th { background: var(--bg-elevated); padding: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-base); }
+.table td { padding: 12px; border-bottom: 1px solid var(--border-base); font-size: 13px; vertical-align: top; }
+.mono { font-family: var(--font-mono); }
+.roleBadge { font-family: var(--font-mono); font-size: 11px; background: var(--bg-elevated); padding: 2px 4px; border: 1px solid var(--border-base); }
+.eventBadge { font-family: var(--font-mono); font-size: 11px; color: var(--red); font-weight: bold; }
+.json { background: var(--bg-base); padding: 8px; border: 1px solid var(--border-base); color: var(--text-secondary); font-size: 11px; max-height: 150px; overflow-y: auto; white-space: pre-wrap; margin: 0; }
+.pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-family: var(--font-mono); font-size: 13px; }
+.pagination button { background: var(--bg-surface); border: 1px solid var(--border-base); color: var(--text-primary); padding: 6px 14px; cursor: pointer; }
+.pagination button:disabled { color: var(--text-muted); cursor: not-allowed; }

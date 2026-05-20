@@ -1,0 +1,119 @@
+/* ── existing classes (unchanged) ─────────────────────────────────────────── */
+
+.page { padding: 2rem; max-width: 1200px; }
+.header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.title { font-size: 13px; font-weight: 700; letter-spacing: 0.15em; color: var(--text-primary, #e2e8f0); margin: 0; display: flex; align-items: center; gap: 0.6rem; }
+.badge { font-size: 11px; background: rgba(234,179,8,0.15); color: #eab308; padding: 2px 10px; border-radius: 10px; }
+.errorMsg { color: #ef4444; font-size: 13px; margin-bottom: 1rem; }
+.loading { color: var(--text-muted, #64748b); font-size: 13px; }
+.empty { color: var(--text-muted, #64748b); font-size: 13px; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.card { border: 1px solid rgba(234,179,8,0.2); border-left: 3px solid rgba(234,179,8,0.6); border-radius: 8px; padding: 1rem 1.25rem; background: rgba(234,179,8,0.03); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.card:hover { background: rgba(234,179,8,0.06); }
+.cardSelected { border-color: #eab308; background: rgba(234,179,8,0.08) !important; }
+.cardTop { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.clientTag { font-size: 11px; background: rgba(6,182,212,0.1); color: #06b6d4; padding: 2px 8px; border-radius: 4px; }
+.queryTag { font-size: 11px; color: var(--text-muted, #64748b); }
+.confirmedTag { font-size: 11px; color: #10b981; }
+.time { font-size: 11px; color: var(--text-muted, #64748b); margin-left: auto; }
+.issueText { font-size: 13px; color: var(--text-primary, #e2e8f0); margin: 0 0 0.5rem; line-height: 1.5; }
+.cardMeta { display: flex; align-items: center; justify-content: space-between; }
+.raisedBy { font-size: 11px; color: var(--text-muted, #64748b); }
+.eventTime { font-size: 11px; font-family: monospace; color: var(--text-muted, #64748b); }
+.eventId { font-size: 11px; font-family: monospace; color: var(--text-muted, #64748b); }
+
+.modalBackdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { background: #1e293b; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 1.5rem; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+.modalHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.modalTitle { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: #e2e8f0; }
+.modalClose { background: none; border: none; color: #64748b; font-size: 16px; cursor: pointer; }
+.modalSection { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.modalSection:last-child { border-bottom: none; margin-bottom: 0; }
+.sectionLabel { font-size: 10px; letter-spacing: 0.12em; color: #64748b; margin: 0 0 0.5rem; }
+.modalIssueText { font-size: 13px; color: #e2e8f0; background: rgba(234,179,8,0.06); border-left: 2px solid #eab308; padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; margin: 0 0 0.5rem; line-height: 1.6; }
+.modalMeta { font-size: 12px; color: #64748b; margin: 0; }
+.eventDetail { display: flex; flex-direction: column; gap: 4px; }
+.eventRow { display: flex; align-items: flex-start; gap: 12px; }
+.eventKey { font-size: 11px; color: #64748b; min-width: 90px; padding-top: 1px; }
+.eventVal { font-size: 12px; color: #e2e8f0; }
+.mono { font-family: monospace; }
+.fieldsJson { font-size: 11px; color: #64748b; background: rgba(255,255,255,0.03); border-radius: 6px; padding: 0.75rem; margin: 0; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+
+/* ── new layout + status tags ──────────────────────────────────────────────── */
+
+.layout { display: grid; grid-template-columns: 340px 1fr; gap: 1rem; align-items: start; }
+.layoutFull { grid-template-columns: 1fr; }
+.cardList { display: flex; flex-direction: column; gap: 8px; }
+
+.toggleBtn { font-size: 11px; padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: #94a3b8; cursor: pointer; margin-left: auto; transition: border-color 0.15s, color 0.15s; }
+.toggleBtn:hover { background: rgba(255,255,255,0.05); }
+.toggleActive { border-color: #eab308; color: #eab308; }
+
+.countTag { font-size: 11px; color: #94a3b8; }
+.openTag { font-size: 11px; color: #eab308; background: rgba(234,179,8,0.1); padding: 1px 6px; border-radius: 4px; }
+.partialTag { font-size: 11px; color: #f97316; background: rgba(249,115,22,0.1); padding: 1px 6px; border-radius: 4px; }
+.resolvedTag { font-size: 11px; color: #10b981; }
+.cardAllResolved { opacity: 0.6; border-left-color: rgba(16,185,129,0.4) !important; }
+
+/* ── thread panel ──────────────────────────────────────────────────────────── */
+
+.threadPanel { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 1.25rem; position: sticky; top: 1rem; max-height: calc(100vh - 6rem); overflow-y: auto; }
+.threadHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; gap: 8px; }
+.threadTitle { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #64748b; }
+.threadClose { background: none; border: none; color: #64748b; font-size: 16px; cursor: pointer; flex-shrink: 0; }
+.toggleResolved { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #64748b; cursor: pointer; white-space: nowrap; }
+.toggleResolved:hover { border-color: rgba(255,255,255,0.2); color: #94a3b8; }
+.threadMessages { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── message bubbles ───────────────────────────────────────────────────────── */
+
+.message { border-radius: 6px; padding: 0.75rem; }
+.messageOpen { background: rgba(234,179,8,0.05); border-left: 2px solid rgba(234,179,8,0.5); }
+.messageResolved { background: rgba(255,255,255,0.02); border-left: 2px solid rgba(16,185,129,0.3); opacity: 0.75; }
+.msgHeader { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.msgAuthor { font-size: 12px; font-weight: 600; color: #eab308; }
+.msgTime { font-size: 11px; color: #64748b; margin-left: auto; }
+.resolvedBadge { font-size: 10px; color: #10b981; }
+.msgBody { font-size: 13px; color: #cbd5e1; margin: 0; line-height: 1.6; }
+
+/* ── analyst reply block ───────────────────────────────────────────────────── */
+
+.analystReply { margin-top: 8px; background: rgba(6,182,212,0.05); border-left: 2px solid rgba(6,182,212,0.35); border-radius: 0 6px 6px 0; padding: 0.6rem 0.75rem; }
+.analystReplyHeader { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.analystTag { font-size: 9px; letter-spacing: 0.1em; background: rgba(6,182,212,0.15); color: #06b6d4; padding: 1px 6px; border-radius: 3px; }
+.analystReplyBody { font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.5; }
+.btnEditComment { margin-top: 6px; font-size: 11px; padding: 3px 10px; background: transparent; color: #06b6d4; border: 1px solid rgba(6,182,212,0.25); border-radius: 4px; cursor: pointer; font-family: var(--font-mono); }
+.btnEditComment:hover { background: rgba(6,182,212,0.08); }
+
+/* ── action area ───────────────────────────────────────────────────────────── */
+
+.msgActions { margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.resolveForm { width: 100%; }
+.resolveTextarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #e2e8f0; font-size: 12px; padding: 0.5rem; resize: vertical; box-sizing: border-box; font-family: inherit; }
+.resolveTextarea:focus { outline: none; border-color: rgba(16,185,129,0.4); }
+.resolveFormActions { display: flex; gap: 8px; margin-top: 6px; }
+.btnResolve { font-size: 11px; padding: 4px 12px; background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); border-radius: 5px; cursor: pointer; transition: background 0.15s; }
+.btnResolve:hover:not(:disabled) { background: rgba(16,185,129,0.25); }
+.btnResolve:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Primary "Mark Resolved" button — solid green outline, no comment needed */
+.btnResolveSmall { font-size: 11px; padding: 3px 10px; background: transparent; color: #10b981; border: 1px solid rgba(16,185,129,0.4); border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+.btnResolveSmall:hover:not(:disabled) { background: rgba(16,185,129,0.1); }
+.btnResolveSmall:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Secondary "Reply & Resolve" button — subtle, amber tint */
+.btnReplyResolve { font-size: 11px; padding: 3px 10px; background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.btnReplyResolve:hover { background: rgba(234,179,8,0.06); color: #eab308; border-color: rgba(234,179,8,0.3); }
+
+/* Quick confirm strip (no-comment resolve) */
+.quickConfirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.quickConfirmLabel { font-size: 11px; color: #64748b; }
+
+.btnDeleteSmall { font-size: 11px; padding: 3px 10px; background: transparent; color: #ef4444; border: 1px solid rgba(239,68,68,0.2); border-radius: 4px; cursor: pointer; }
+.btnDeleteSmall:hover { background: rgba(239,68,68,0.08); }
+.btnDeleteForever { font-size: 11px; padding: 3px 10px; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); border-radius: 4px; cursor: pointer; }
+.btnDeleteForever:disabled { opacity: 0.5; cursor: not-allowed; }
+.btnCancel { font-size: 11px; padding: 3px 10px; background: transparent; color: #64748b; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer; }
+.btnCancel:hover { color: #94a3b8; }
+.deleteConfirm { font-size: 11px; color: #ef4444; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
