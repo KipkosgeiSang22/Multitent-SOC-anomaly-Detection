@@ -221,6 +221,9 @@ The client portal is a transparency and communication layer, not an investigatio
 
 Anomaly scores, detection thresholds, ML model details, and Layer 1 rule logic are never exposed to client users. If the superadmin enables anomaly visibility for a client, that client can see which of their events were flagged , not why the algorithm flagged them or what score was assigned.
 
+### Note:
+The two-hour correlation window applies only to how events are presented in the client portal — it controls when repeated identical events are collapsed into a single grouped row. It has no effect on anomaly detection. Layer 1 rules each carry their own window_minutes parameter and aggregate across whatever time range that rule defines. The anomaly engine evaluates events against those independent windows, so a brute force rule looking back 5 minutes and a lateral movement rule looking back 60 minutes coexist without interfering with each other.
+
  <img width="1877" height="860" alt="image" src="https://github.com/user-attachments/assets/e14904bb-966e-4aa1-85b5-57e73fbfdd3b" />
 
 
@@ -232,13 +235,14 @@ This section exists because an honest system document is more useful than one th
 
 **Feature schema versioning is not yet implemented.** The `ml_models.feature_columns` column records what features a model was trained on, but there is no automated check at inference time that verifies the incoming feature vector matches the schema the loaded model expects. If a normalization change or adapter update silently changes the features available for a client, the model will score against the wrong schema without raising an error. The planned fix is explicit versioned feature schemas , a version identifier attached to each model file and checked at scoring time before the model is used.
 
-**The correlation window is fixed at two hours.** Slow attacks , lateral movement that unfolds over hours or days, low-and-slow credential stuffing, long dwell-time intrusions , will not be correlated into a single group by the current logic. Adaptive or sliding correlation windows, potentially driven by the anomaly score of the first event in a sequence, are on the roadmap.
 
 **JSONB is not currently used for direct ML queries**, which is correct, but there is a risk that shortcuts will emerge as the platform grows. Any future contributor who reaches into the `fields` JSONB column to build an ML feature is introducing the exact consistency and performance problems the typed table separation is designed to prevent. The canonical flow is: `fields` JSONB → normalization → typed table → ML features. Contributions that shortcut this will not be accepted.
 
 **Frequency maps are computed per training run, not maintained as a rolling store.** `apply_freq_map()` builds frequency floats from the data available at training time. At inference time, new values not seen during training (a new employee's username, a new server's IP) receive a frequency of zero or a low default. This is correct behavior, but it means the model's sensitivity to new principals decays between retraining runs. A lightweight feature store that maintains rolling frequency counts between retrains would make this more robust.
 
 **Threat intelligence cross-referencing (Layer 3) is early-stage.** IOC matching currently covers IPs and hashes. Domain-based matching, MITRE ATT&CK technique tagging on events, and confidence scoring for IOC matches are planned.
+
+**API concurrency is bounded by semaphores, which constrains query granularity**. The log collector dispatches all client/query pairs concurrently via asyncio.gather, bounded by asyncio.Semaphore(MAX_CONCURRENT_FETCHES) — defaulting to 8 concurrent fetches per client, configurable via the LOG_COLLECTOR_CONCURRENCY environment variable. To stay within this constraint while still capturing all events needed for the three ML categories (authentication, account management, and process creation), queries are intentionally broad rather than narrowly targeted. This is a deliberate trade-off: broader queries reduce the number of API calls needed per cycle but require the normalization layer to do more filtering work after the fact. It is also why the platform currently targets open-source SIEMs like Graylog, whose API rate limits are flexible enough to accommodate this pattern. Commercial SIEMs with strict per-minute API quotas would require either a higher concurrency limit, restructured queries, or a different collection strategy entirely.
 
 ---
 
