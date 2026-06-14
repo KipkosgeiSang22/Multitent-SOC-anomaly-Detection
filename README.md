@@ -119,6 +119,7 @@ JSONB is used for the `fields` column because named queries across different cli
 
 However, JSONB is not used for direct ML feature extraction. The anomaly engine reads the JSONB fields only to populate the fixed-schema typed tables (`auth_events`, `account_events`, `process_events`). Those typed tables have explicit, typed columns and are what the Isolation Forest models and Layer 1 rules actually consume. This separation means JSONB serves its purpose as a flexible raw store without the consistency and performance problems that come from running ML feature pipelines directly against it.
 
+### Graylog
 <img width="1845" height="933" alt="image" src="https://github.com/user-attachments/assets/1b168a6d-e307-458d-aadb-dac7337dea79" />
 
 
@@ -193,7 +194,7 @@ If a model file is missing or corrupt at runtime, the engine logs a critical err
 
 `threat_intel.py` runs every six hours and collects from NVD (National Vulnerability Database) , CVEs from the last 6 hours, AlienVault OTX , threat pulses from the last 6 hours, RSS feeds (BleepingComputer, The Hacker News, Dark Reading), and the MITRE ATT&CK enterprise attack pattern catalogue, downloaded as `enterprise-attack.json`.
 
-Articles and advisories longer than 500 characters are summarized to 2–3 sentences by the Claude API (`claude-haiku-4-5`) before storage. This keeps the threat intel feed scannable for analysts without losing the source link for those who want the full detail.
+Articles and advisories longer than 500 characters are summarized to 2–3 sentences by the Groq API before storage. This keeps the threat intel feed scannable for analysts without losing the source link for those who want the full detail.
 
 Each collected item carries an `iocs` JSONB column containing extracted IPs, file hashes, and domains. A GIN index on this column makes cross-referencing fast.
 
