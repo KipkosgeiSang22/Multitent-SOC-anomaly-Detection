@@ -1,6 +1,6 @@
 import os
 import secrets
-import string
+import string 
 import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Any
@@ -15,7 +15,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], bcrypt__rounds=12)
 ALGORITHM = "HS256"
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(password) 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

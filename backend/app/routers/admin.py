@@ -168,7 +168,7 @@ async def create_client_user(
     await log_action(
         db=db,
         request=request,
-        event_type="ANALYST_CREATED",
+        event_type="CLIENT_USER_CREATED",
         user_id=current_user.id,
         client_id=body.client_id,
         target_id=new_user.id,
@@ -291,6 +291,7 @@ async def reset_user_password(
         flush_only=True,
     )
     await db.commit()
+    # await _send_reset_email(user.email, temp_password)
 
     response: dict = {"detail": "Password reset"}
     if settings.ENVIRONMENT == "development":
@@ -382,7 +383,7 @@ async def create_client(
     db.add(new_client)
     await db.flush()
 
-    os.makedirs(f"{settings.MODEL_BASE_PATH}/{new_client.id}", exist_ok=True)
+    
 
     await seed_default_rules_for_client(db, new_client.id, current_user.id)
 
@@ -405,6 +406,7 @@ async def create_client(
     )
     await db.commit()
     await db.refresh(new_client)
+    os.makedirs(f"{settings.MODEL_BASE_PATH}/{new_client.id}", exist_ok=True)
     return new_client
 
 
@@ -692,7 +694,6 @@ async def list_permissions(
     perms = result.scalars().all()
     return [await _build_permission_response(p, db) for p in perms]
 
-
 @router.post("/permissions/grant", response_model=PermissionResponse, status_code=201)
 async def grant_permission(
     request: Request,
@@ -706,7 +707,18 @@ async def grant_permission(
         raise HTTPException(status_code=404, detail="Analyst not found")
     if analyst.role != "analyst":
         raise HTTPException(status_code=400, detail="Target user is not an analyst")
-
+    old_perm_result =await db.execute(
+        select(AnalystPermission).where(AnalystPermission.analyst_id == body.analyst_id,
+                                        AnalystPermission.revoked_at.is_(None))
+    )
+    old_perm = old_perm_result.scalar_one_or_none()
+    before = {
+        "can_retrain_models":old_perm.can_retrain_models,
+        "can_edit_layer1_rules":old_perm.can_edit_layer1_rules,
+        "can_manage_graylog":old_perm.can_manage_graylog,
+        "client_scope":old_perm.client_scope,
+        "reason":old_perm.reason,
+     } if old_perm else None
     await db.execute(
         update(AnalystPermission)
         .where(
@@ -734,7 +746,8 @@ async def grant_permission(
         event_type="PERMISSION_GRANTED",
         user_id=current_user.id,
         target_id=body.analyst_id,
-        details={
+        before_update=before,
+        after_update={
             "analyst_id": body.analyst_id,
             "analyst_username": analyst.username,
             "can_retrain_models": body.can_retrain_models,

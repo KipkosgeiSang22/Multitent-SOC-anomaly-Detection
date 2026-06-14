@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import os
 import pickle
+import pytz
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -147,15 +148,20 @@ def _extract_features(rows: list, category: str) -> np.ndarray:
         ts: datetime = row["timestamp"]
         if ts is None:
             continue
-
+# convert to EAT for time features — same as anomaly_engine pipeline
+        EAT_TZ = pytz.timezone("Africa/Nairobi")
+        if ts.tzinfo is not None:
+            ts_eat = ts.astimezone(EAT_TZ)
+        else:
+            ts_eat = ts.replace(tzinfo=EAT_TZ)
         vec = []
         for feat in features:
             if feat == "Hour":
-                vec.append(float(ts.hour))
+                vec.append(float(ts_eat.hour))
             elif feat == "DayOfWeek":
-                vec.append(float(ts.weekday()))
+                vec.append(float(ts_eat.weekday()))
             elif feat == "IsWeekend":
-                vec.append(1.0 if ts.weekday() >= 5 else 0.0)
+                vec.append(1.0 if ts_eat.weekday() >= 5 else 0.0)
             elif feat == "EventID":
                 # Find the JSONB key that maps to EventID
                 raw_val = row.get("EventID") or row.get("eventid") or 0
@@ -175,7 +181,7 @@ def _extract_features(rows: list, category: str) -> np.ndarray:
                 vec.append(0.0)
         matrix.append(vec)
 
-    return np.array(matrix, dtype=float)
+    return np.array(matrix, dtype=float), text_col_map
 
 
 # ── Background training task ──────────────────────────────────────────────────
@@ -207,16 +213,15 @@ async def _run_bootstrap(
                     SELECT
                         id,
                         timestamp,
-                        fields
+                        fields,
+                        all_timestamps
                     FROM operational_events
                     WHERE client_id = :client_id
-                      AND query_name = :query_name
-                      AND (fields->>'EventID')::int = ANY(:event_ids)
+                    AND (fields->>'EventID')::int = ANY(:event_ids)
                     ORDER BY timestamp ASC
                 """)
                 result = await db.execute(sql, {
                     "client_id": client_id,
-                    "query_name": category,
                     "event_ids": event_ids,
                 })
                 raw_rows = result.mappings().all()
@@ -233,14 +238,29 @@ async def _run_bootstrap(
                     results.append(cat_result)
                     continue
 
-                # Expand JSONB fields into flat dicts for feature extraction
+                # Expand each grouped row into one flat dict per timestamp occurrence
+                # so the model trains on the true distribution of hours, not just
+                # the latest occurrence timestamp per group
+                EAT_TZ = pytz.timezone("Africa/Nairobi")
                 flat_rows = []
                 for row in raw_rows:
-                    d = dict(row["fields"] or {})
-                    d["timestamp"] = row["timestamp"]
-                    flat_rows.append(d)
+                    all_ts = row["all_timestamps"] or []
+                    timestamps = []
+                    for ts_str in all_ts:
+                        try:
+                            ts_dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=EAT_TZ)
+                            timestamps.append(ts_dt)
+                        except ValueError:
+                            continue
+                    # fallback to single timestamp if all_timestamps empty
+                    if not timestamps:
+                        timestamps = [row["timestamp"]]
+                    for ts in timestamps:
+                        d = dict(row["fields"] or {})
+                        d["timestamp"] = ts
+                        flat_rows.append(d)
 
-                X = _extract_features(flat_rows, category)
+                X, freq_maps = _extract_features(flat_rows, category)
 
                 if X.shape[0] < MIN_ROWS:
                     cat_result.update({
@@ -273,8 +293,18 @@ async def _run_bootstrap(
                     shutil.copy2(pkl_path, bak_path)
                     log.info(f"Bootstrap backed up existing: {pkl_path} → {bak_path}")
 
-                with open(pkl_path, "wb") as f:
-                    pickle.dump(model, f)
+                model_artifact = {
+                    "model": model,
+                    "freq_maps": freq_maps,          # e.g. {"TargetUserName_Freq": {...}, "IpAddress_Freq": {...}}
+                    "feature_columns": REQUIRED_FEATURES[category],
+                    "category": category,
+                    "trained_at": datetime.now(timezone.utc).isoformat(),
+                    "training_rows": X.shape[0],
+                }
+
+                import joblib
+                joblib.dump(model_artifact, pkl_path)
+
                 log.info(
                     f"Bootstrap saved model: {pkl_path} "
                     f"(client={client_id}, category={category}, rows={training_rows})"
@@ -405,11 +435,9 @@ async def check_readiness(
         count_result = await db.execute(text("""
             SELECT COUNT(*) FROM operational_events
             WHERE client_id = :client_id
-              AND query_name = :query_name
               AND (fields->>'EventID')::int = ANY(:event_ids)
         """), {
             "client_id": client_id,
-            "query_name": category,
             "event_ids": event_ids,
         })
         event_count = count_result.scalar() or 0
@@ -464,7 +492,7 @@ async def start_bootstrap_training(
             detail="contamination must be between 0.01 and 0.20",
         )
 
-    model_base_path = getattr(settings, "MODEL_BASE_PATH", "/opt/soc_platform/models")
+    model_base_path = getattr(settings, "MODEL_BASE_PATH", "C:/Users/ADMIN/Desktop/Model/soc_platform/models")
     job_id = str(uuid.uuid4())
 
     _jobs[job_id] = {

@@ -29,14 +29,27 @@ import json
 from datetime import datetime
 from pathlib import Path
 import zoneinfo
-
+from cryptography.fernet import Fernet
 import asyncpg
 import pandas as pd
 from dotenv import load_dotenv
+from typing import List, Tuple
+from app.siem.factory import get_adapter
+
+
+# Fail fast at startup if Fernet key is missing or invalid
 
 # ── ENVIRONMENT LOADING ───────────────────────────────────────────────────────
 # Walk up to backend/.env regardless of where the script is invoked from.
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
+MAX_DB_POOL_SIZE = int(os.getenv("LOG_COLLECTOR_DB_POOL_SIZE","100"))
+DATABASE_URL = os.environ["DATABASE_URL"]
+FERNET_KEY   = os.environ["FERNET_KEY"]
+try:
+    Fernet(FERNET_KEY)
+except Exception as e:
+    sys.stderr.write(f"Invalid Fernet key: {e}\n")
+    sys.exit(1)
 
 # ── RESOLVE INTER-MODULE PATHS ────────────────────────────────────────────────
 # Adds the backend/ directory to sys.path so app.siem.factory is importable.
@@ -44,7 +57,7 @@ _backend_dir = Path(__file__).resolve().parent.parent
 if str(_backend_dir) not in sys.path:
     sys.path.insert(0, str(_backend_dir))
 
-from app.siem.factory import get_adapter as _get_adapter
+
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -100,24 +113,23 @@ def generate_fingerprint(client_id: int, query_name: str, group_key: str, initia
     return hashlib.sha256(seed.encode("utf-8")).hexdigest()
 
 
-def compute_time_summary(timestamps_list: list) -> str:
+def compute_time_summary(timestamps_list: List[datetime])->Tuple[List[str], str]:
     """
-    Produces a human-readable time summary for a group of identical events.
-      1 timestamp  → that timestamp
-      2-3          → all joined by ' | '
-      4+           → first | middle | last
+    Returns (all_timestamps, summary_string).
+    - all_timestamps: full deduplicated sorted list of ISO-like strings
+    - summary_string: condensed human-readable summary
     """
-    sorted_ts = sorted(timestamps_list)
+    sorted_ts = sorted(set(ts.replace(microsecond=0) for ts in timestamps_list))
     formatted = [ts.strftime("%Y-%m-%d %H:%M:%S") for ts in sorted_ts]
     count = len(formatted)
-
     if count == 1:
-        return formatted[0]
-    elif count <= 3:
-        return " | ".join(formatted)
+        summary = formatted[0]
+    elif count <=3:
+        summary = " | ".join(formatted)
     else:
         middle_idx = count // 2
-        return f"{formatted[0]} | {formatted[middle_idx]} | {formatted[-1]}"
+        summary  = f"{formatted[0]} | {formatted[middle_idx]} | {formatted[-1]}"
+    return formatted, summary
 
 
 # ── FETCH WITH EXPONENTIAL BACKOFF RETRY ─────────────────────────────────────
@@ -149,192 +161,178 @@ async def fetch_with_retry(adapter, query: str, lookback_seconds: int, limit: in
 
 
 # ── CORE ORCHESTRATION ENGINE ─────────────────────────────────────────────────
-
 async def process_client_telemetry(
     pool: asyncpg.Pool,
     client: dict,
     query_config: dict,
     semaphore: asyncio.Semaphore,
+    adapter,            
 ) -> int:
     """
     Fetches events for one (client, named_query) pair from the SIEM adapter
     and upserts them into operational_events with grouping logic applied.
-    Acquires its own connection from the pool so concurrent tasks never
-    share a single connection.  Bounded by the semaphore to limit concurrent
-    SIEM calls.
     Returns the number of net-new rows inserted this cycle.
     """
     async with semaphore:
-      async with pool.acquire() as conn:
-        client_id = client["id"]
-        query_name = query_config["query_name"]
-        graylog_query = query_config["graylog_query"]
-        siem_type = client.get("siem_type", "graylog")
+        async with pool.acquire() as conn:
+            client_id = client["id"]
+            query_name = query_config["query_name"]
+            graylog_query = query_config["graylog_query"]
+            siem_type = client.get("siem_type", "graylog")
 
-        logger.info(
-            f"Syncing '{query_name}' for client [{client_id}] via [{siem_type.upper()}]."
-        )
-
-        # Resolve SIEM adapter from factory (raises ValueError/RuntimeError if misconfigured)
-        try:
-            adapter = _get_adapter(dict(client))
-        except (ValueError, RuntimeError) as factory_err:
-            logger.warning(f"Skipping client {client_id}: {factory_err}")
-            return 0
-
-        # Determine lookback window; respect per-query time_range if configured.
-        lookback_seconds = int(
-            query_config.get("time_range") or DEFAULT_LOOKBACK_SECONDS
-        )
-
-        # Fetch raw events from SIEM via retry wrapper
-        try:
-            raw_events = await fetch_with_retry(
-                adapter=adapter,
-                query=graylog_query,
-                lookback_seconds=lookback_seconds,
-                limit=1000,
+            logger.info(
+                f"Syncing '{query_name}' for client [{client_id}] via [{siem_type.upper()}]."
             )
-        except Exception as api_err:
-            logger.error(
-                f"SIEM fetch failed after {MAX_RETRIES} attempts — "
-                f"client {client_id}, query '{query_name}': "
-                f"{type(api_err).__name__}: {api_err}",
-                exc_info=True,
+
+            lookback_seconds = int(
+                query_config.get("time_range") or DEFAULT_LOOKBACK_SECONDS
             )
-            return 0
 
-        if not raw_events:
-            return 0
-
-        # Normalise list[dict] → list of dicts with timestamp / source_host / fields.
-        # Strip SIEM-internal meta-fields from the stored fields payload.
-        normalised = []
-        for msg in raw_events:
-            ts  = msg.get("timestamp") or msg.get("_time") or msg.get("@timestamp")
-            src = msg.get("source") or msg.get("host") or "UNKNOWN_HOST_NODE"
-            normalised.append({
-                "timestamp":   ts,
-                "source_host": src,
-                "fields":      {k: v for k, v in msg.items() if k not in _SIEM_META_FIELDS},
-            })
-
-        df = pd.DataFrame(normalised)
-        if df.empty:
-            return 0
-
-        inserted_count = 0
-
-        for _, row in df.iterrows():
-            raw_time_str = row.get("timestamp")
-            source_host  = row.get("source_host", "UNKNOWN_HOST_NODE")
-            fields_data  = row.get("fields", {})
-
-            if not raw_time_str:
-                continue
-
-            # 1. Convert timestamp → EAT
+            # Fetch raw events
             try:
-                if isinstance(raw_time_str, str):
-                    utc_dt = datetime.fromisoformat(raw_time_str.replace("Z", "+00:00"))
-                else:
-                    utc_dt = pd.to_datetime(raw_time_str).to_pydatetime()
-
-                if utc_dt.tzinfo is None:
-                    utc_dt = utc_dt.replace(tzinfo=UTC_TZ)
-                eat_dt = utc_dt.astimezone(EAT_TZ)
-            except Exception:
-                logger.warning(
-                    f"Could not parse timestamp '{raw_time_str}' for client {client_id} "
-                    f"query '{query_name}'. Falling back to current EAT time."
+                raw_events = await fetch_with_retry(
+                    adapter=adapter,
+                    query=graylog_query,
+                    lookback_seconds=lookback_seconds,
+                    limit=1000,
                 )
-                eat_dt = datetime.now(EAT_TZ)
-
-            # 2. Build group_key from non-timestamp fields (order-stable)
-            if not isinstance(fields_data, dict):
-                fields_data = {"raw_log_payload": str(fields_data)}
-
-            sorted_fields_string = "|".join(
-                f"{k}:{fields_data[k]}" for k in sorted(fields_data.keys())
-            )
-            group_key = hashlib.md5(sorted_fields_string.encode("utf-8")).hexdigest()
-
-            # 3. Derive fingerprint for this 2-hour window slot
-            fingerprint = generate_fingerprint(client_id, query_name, group_key, eat_dt)
-
-            # 4. Check for an existing row with this fingerprint
-            existing_record = await conn.fetchrow(
-                """
-                SELECT id, time_summary
-                FROM operational_events
-                WHERE event_fingerprint = $1 AND client_id = $2
-                """,
-                fingerprint,
-                client_id,
-            )
-
-            if existing_record:
-                # ── UPDATE existing group row ─────────────────────────────────
-                # Reconstruct the timestamp list from the stored time_summary string.
-                current_summary = existing_record["time_summary"] or ""
-                parsed_timestamps = []
-                for token in current_summary.split("|"):
-                    cleaned = token.strip()
-                    if cleaned:
-                        try:
-                            parsed_timestamps.append(
-                                datetime.strptime(cleaned, "%Y-%m-%d %H:%M:%S").replace(
-                                    tzinfo=EAT_TZ
-                                )
-                            )
-                        except ValueError:
-                            continue
-
-                if eat_dt not in parsed_timestamps:
-                    parsed_timestamps.append(eat_dt)
-
-                updated_summary = compute_time_summary(parsed_timestamps)
-
-                # NEVER touch confirmed_by, confirmed_at, issue_text, issue_raised_by,
-                # issue_raised_at — those are owned exclusively by client users.
-                await conn.execute(
-                    """
-                    UPDATE operational_events
-                    SET time_summary = $1,
-                        fields       = $2,
-                        source_host  = $3
-                    WHERE id = $4
-                    """,
-                    updated_summary,
-                    json.dumps(fields_data),   # must be str for asyncpg JSONB
-                    source_host,
-                    existing_record["id"],
+            except Exception as api_err:
+                logger.error(
+                    f"SIEM fetch failed after {MAX_RETRIES} attempts — "
+                    f"client {client_id}, query '{query_name}': "
+                    f"{type(api_err).__name__}: {api_err}",
+                    exc_info=True,
                 )
+                return 0
 
-            else:
-                # ── INSERT new row ────────────────────────────────────────────
-                initial_summary = eat_dt.strftime("%Y-%m-%d %H:%M:%S")
+            if not raw_events:
+                return 0
 
-                await conn.execute(
+            # Normalize events
+            normalised = []
+            for msg in raw_events:
+                ts = msg.get("timestamp") or msg.get("_time") or msg.get("@timestamp")
+                src = msg.get("source") or msg.get("host") or "UNKNOWN_HOST_NODE"
+                normalised.append({
+                    "timestamp": ts,
+                    "source_host": src,
+                    "fields": {k: v for k, v in msg.items() if k not in _SIEM_META_FIELDS},
+                })
+
+            df = pd.DataFrame(normalised)
+            if df.empty:
+                return 0
+
+            inserted_count = 0
+
+            for _, row in df.iterrows():
+                raw_time_str = row.get("timestamp")
+                source_host = row.get("source_host", "UNKNOWN_HOST_NODE")
+                fields_data = row.get("fields", {})
+
+                if not raw_time_str:
+                    continue
+
+                # Convert timestamp → EAT
+                try:
+                    if isinstance(raw_time_str, str):
+                        utc_dt = datetime.fromisoformat(raw_time_str.replace("Z", "+00:00"))
+                    else:
+                        utc_dt = pd.to_datetime(raw_time_str).to_pydatetime()
+
+                    if utc_dt.tzinfo is None:
+                        utc_dt = utc_dt.replace(tzinfo=UTC_TZ)
+                    eat_dt = utc_dt.astimezone(EAT_TZ)
+                except Exception:
+                    logger.warning(
+                        f"Could not parse timestamp '{raw_time_str}' for client {client_id} "
+                        f"query '{query_name}'. Falling back to current EAT time."
+                    )
+                    eat_dt = datetime.now(EAT_TZ)
+
+                # Truncate microseconds
+                eat_dt_truncated = eat_dt.replace(microsecond=0)
+
+                # Build group_key
+                if not isinstance(fields_data, dict):
+                    fields_data = {"raw_log_payload": str(fields_data)}
+
+                sorted_fields_string = "|".join(
+                    f"{k}:{fields_data[k]}" for k in sorted(fields_data.keys())
+                )
+                group_key = hashlib.md5(sorted_fields_string.encode("utf-8")).hexdigest()
+
+                # Fingerprint
+                fingerprint = generate_fingerprint(client_id, query_name, group_key, eat_dt_truncated)
+
+                # Prepare summary + timestamps
+                initial_str = eat_dt_truncated.strftime("%Y-%m-%d %H:%M:%S")
+                all_ts, updated_summary = compute_time_summary([eat_dt_truncated])
+
+                # UPSERT: insert or update in one query
+                result = await conn.fetchrow(
                     """
                     INSERT INTO operational_events (
                         client_id, query_name, event_fingerprint, timestamp,
-                        source_host, fields, time_summary, group_key, analyzed_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL)
+                        source_host, fields, time_summary, all_timestamps,
+                        group_key, analyzed_at
+                    )
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NULL)
                     ON CONFLICT (event_fingerprint) DO NOTHING
+                    RETURNING id
                     """,
                     client_id,
                     query_name,
                     fingerprint,
-                    eat_dt,
+                    eat_dt_truncated,
                     source_host,
-                    json.dumps(fields_data),   # must be str for asyncpg JSONB
-                    initial_summary,
+                    fields_data,
+                    updated_summary,
+                    all_ts,
                     group_key,
                 )
-                inserted_count += 1
+                if result:
+                    inserted_count += 1
+                else:
+                    existing = await conn.fetchrow(
+                        """
+                        SELECT id, all_timestamps 
+                        FROM operational_events 
+                        WHERE event_fingerprint = $1 AND client_id = $2
+                        """,
+                        fingerprint,
+                        client_id,
+                    )
+                    if existing:
+                        # Parse existing strings back to datetimes
+                        existing_datetimes = []
+                        for ts_str in (existing["all_timestamps"] or []):
+                            try:
+                                existing_datetimes.append(
+                                    datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=EAT_TZ)
+                                )
+                            except ValueError:
+                                continue
 
-        return inserted_count
+                        # Merge with new timestamp and recompute
+                        merged_ts_list, merged_summary = compute_time_summary(
+                            existing_datetimes + [eat_dt_truncated]
+                        )
+
+                        await conn.execute(
+                            """
+                            UPDATE operational_events
+                            SET all_timestamps = $1,
+                                time_summary   = $2,
+                                timestamp      = $3
+                            WHERE id = $4
+                            """,
+                            merged_ts_list,
+                            merged_summary,
+                            eat_dt_truncated,   # ← latest occurrence timestamp, for use in anomaly detection
+                            existing["id"],
+                        )
+            return inserted_count
 
 
 # ── SUBSCRIPTION SUSPENSION ───────────────────────────────────────────────────
@@ -400,12 +398,14 @@ async def main():
     # Create a connection pool — each concurrent task acquires its own
     # connection, eliminating the "another operation is in progress" error
     # that occurs when multiple coroutines share a single asyncpg.Connection.
+
+    
     try:
-        pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=MAX_CONCURRENT_FETCHES + 2)
+        pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=MAX_DB_POOL_SIZE)
     except Exception as db_err:
         logger.critical(
             f"Cannot connect to PostgreSQL: {type(db_err).__name__}: {db_err}",
-            exc_info=True,
+            exc_info=True, #stack trace(file, line number, error type)
         )
         sys.exit(1)
 
@@ -413,6 +413,8 @@ async def main():
     clients_processed     = 0
     status                = "success"
     last_error: str | None = None
+    adapters = {}
+    tasks = []
 
     try:
         async with pool.acquire() as conn:
@@ -426,19 +428,36 @@ async def main():
                 )
                 clients_queries.append((client, list(queries)))
 
+
         # Build the full task list — planning is done; pool connections are released above.
-        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FETCHES)
-        tasks = []
+        client_semaphores = {
+            client["id"]:asyncio.Semaphore(MAX_CONCURRENT_FETCHES)
+            for client, _ in clients_queries
+        }
+
+
+
         for client, queries in clients_queries:
+            try:
+                adapter = get_adapter(dict(client))#ensure one client uses one adapter, only one session is opened for all api calls
+
+                adapters[client["id"]] = adapter
+            except (ValueError, RuntimeError) as factory_err:
+                logger.warning(f"Skipping client {client['id']}: {factory_err}")
+                continue   # skip this client entirely, don't add its tasks
+
+            sem = client_semaphores[client["id"]]
             for query_config in queries:
                 tasks.append(
-                    process_client_telemetry(
-                        pool,
-                        dict(client),
-                        dict(query_config),
-                        semaphore,
-                    )
+                    process_client_telemetry(pool, dict(client), dict(query_config), sem, adapter)
                 )
+#                 tasks = [
+#     process_client_telemetry(pool, {"id":1,"name":"Acme Corp"}, {"id":10,"query_name":"failed_logins"}, sem_for_client1),
+#     process_client_telemetry(pool, {"id":1,"name":"Acme Corp"}, {"id":11,"query_name":"suspicious_files"}, sem_for_client1),
+#     process_client_telemetry(pool, {"id":2,"name":"Beta Ltd"}, {"id":12,"query_name":"account_creation"}, sem_for_client2),
+#     process_client_telemetry(pool, {"id":2,"name":"Beta Ltd"}, {"id":13,"query_name":"password_resets"}, sem_for_client2),
+# ]
+
 
         # Dispatch all tasks concurrently; collect results (or exceptions) as they finish.
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -451,6 +470,8 @@ async def main():
             elif isinstance(r, int):
                 total_events_inserted += r
 
+
+
     except Exception as loop_fault:
         status     = "failed"
         last_error = str(loop_fault)
@@ -459,8 +480,13 @@ async def main():
     finally:
         duration = (datetime.now(EAT_TZ) - start_time).total_seconds()
 
+        
+        for client_id, adapter in adapters.items():
+            try:
+                await adapter.close()
+            except Exception as close_err:
+                logger.warning(f"Failed to close adapter for client {client_id}: {close_err}")
         await suspend_overdue_clients(pool)
-
         # Upsert scheduler_status — ON CONFLICT handles the unique constraint
         # on process_name so repeated runs always update rather than insert.
         try:

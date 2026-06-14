@@ -183,7 +183,7 @@ const setCustom = (field, val) => {
       }
 
       const res = await api.get("/analyst/events", { params });
-      const data = res.data ?? [];
+      const data = res.data?.items ?? [];
       setEvents(data);
       setFieldKeys(getFieldKeys(data));
     } catch { setError("Failed to load events."); }

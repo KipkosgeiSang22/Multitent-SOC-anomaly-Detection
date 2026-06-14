@@ -10,6 +10,12 @@ const CLIENT_NAV = [
       { label: "Anomalies", to: "anomalies", icon: "⚠" },
       { label: "Downloads", to: "downloads", icon: "⬇" }
     ]
+  },
+  {
+    title: "ACCOUNT",
+    items: [
+      { label: "Settings", to: "settings", icon: "⚙" }
+    ]
   }
 ];
 

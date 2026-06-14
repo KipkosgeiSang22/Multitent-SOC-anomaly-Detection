@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Optional, List
+from typing import AsyncGenerator, Optional, List# An asynchronous generator is a function defined with async def that contains at least one yield
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +6,7 @@ from sqlalchemy import select, text
 from datetime import datetime, timezone
 from app.db.session import AsyncSessionLocal
 from app.core.security import decode_token
-from app.models.user import User
+from app.models.user import User 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 

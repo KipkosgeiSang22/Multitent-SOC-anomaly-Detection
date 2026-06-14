@@ -132,7 +132,7 @@ async def _proxy_call(
     client_id: int,
     action_type: str,
     payload: dict,
-    coro,  # awaitable that calls the adapter
+    coro,  # awaitable that calls the adapter, coroutine
 ) -> Any:
     """
     Execute an adapter coroutine, write to graylog_audit + audit_log,
@@ -389,7 +389,7 @@ async def list_streams(
                              "get_streams", {},
                              adapter.get_streams())
     return GraylogProxyResponse(success=True, data=data)
-
+#adapter looks like this:adapter = GraylogAdapter("https://graylog.example.com", {"username": "admin", "password": "secret"})
 
 # ── Graylog audit log (internal — what actions were taken via this proxy) ─────
 @router.get("/{client_id}/audit", response_model=List[dict])

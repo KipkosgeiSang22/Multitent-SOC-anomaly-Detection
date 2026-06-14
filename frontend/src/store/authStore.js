@@ -9,8 +9,8 @@ import api from '../api/axios';
 //
 //   POST /auth/login response:
 //     { mfa_required: false, access_token: "...", token_type: "bearer" }
-//     ⚠ No refresh cookie set here — MFA not yet wired into login flow.
-//     ⚠ No user object — must call GET /auth/me separately.
+//     Sets httpOnly refresh cookie (7-day expiry) on non-MFA logins.
+//     No user object — must call GET /auth/me separately.
 //
 //   POST /auth/mfa-verify response:
 //     Sets httpOnly refresh cookie + returns { access_token, token_type }

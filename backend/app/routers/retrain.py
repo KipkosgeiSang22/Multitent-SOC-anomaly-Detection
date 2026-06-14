@@ -12,6 +12,8 @@ Endpoints:
   GET  /retrain/status/{job_id}                 — poll job status
   POST /retrain/rollback/{client_id}/{category} — rollback to .bak.pkl (step 5)
 """
+
+
 from __future__ import annotations
 
 import asyncio
@@ -26,6 +28,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+import joblib as _joblib
 
 from app.core.audit import log_action
 from app.core.config import settings
@@ -219,8 +222,12 @@ async def _run_retrain(
                 include_clause = f"OR te.id IN ({ids})"
 
             sql = text(f"""
-                SELECT te.*
+                SELECT
+                    te.*,
+                    oe.all_timestamps
                 FROM {table} te
+                JOIN operational_events oe
+                    ON oe.id = te.operational_event_id
                 WHERE (
                     te.client_id = :client_id
                     AND te.timestamp BETWEEN :period_start AND :period_end
@@ -243,23 +250,131 @@ async def _run_retrain(
                 })
                 return
 
-            # Build feature matrix — typed tables already have engineered columns
-            # Map DB column names to feature names
-            reverse_map = {v: k for k, v in COL_TO_FEATURE.items()}
+            import pytz as _pytz
+            from collections import Counter as _Counter
+            EAT_TZ = _pytz.timezone("Africa/Nairobi")
 
-            def get_val(row: dict, feature: str) -> float:
-                col = reverse_map.get(feature, feature.lower())
-                v = row.get(col)
-                if v is None:
-                    return 0.0
-                if isinstance(v, bool):
-                    return float(v)
-                return float(v)
+            # ── Step 1: Build fresh freq maps from raw text columns ───────────
+            # Must happen BEFORE expansion so get_feature_val can use them.
+            # Each occurrence counts independently — repeat value n times
+            # where n = number of timestamps in all_timestamps for that row.
+            def _build_freq_map_from_rows(values: list) -> dict:
+                counts = _Counter(v for v in values if v is not None)
+                total = len(values) or 1
+                return {k: v / total for k, v in counts.items()}
 
-            X = np.array([
-                [get_val(dict(r), f) for f in feature_cols]
-                for r in rows
-            ])
+            freq_maps = {}
+            if category == "AuthenticationEvents":
+                tu_vals, ip_vals = [], []
+                for r in rows:
+                    row = dict(r)
+                    n = max(len(row.get("all_timestamps") or []), 1)
+                    tu_vals.extend([row.get("target_username")] * n)
+                    ip_vals.extend([row.get("ip_address")] * n)
+                    #duplicates n times eg [ josh, josh, josh, victoria, victoria, when building freq, josh will be 3/5 and victoria will be 2/5]
+                freq_maps["TargetUserName_Freq"] = _build_freq_map_from_rows(tu_vals)
+                freq_maps["IpAddress_Freq"]       = _build_freq_map_from_rows(ip_vals)
+            elif category == "AccountManagementEvents":
+                su_vals, tu_vals = [], []
+                for r in rows:
+                    row = dict(r)
+                    n = max(len(row.get("all_timestamps") or []), 1)
+                    su_vals.extend([row.get("subject_username")] * n)
+                    tu_vals.extend([row.get("target_username")] * n)
+                freq_maps["SubjectUserName_Freq"] = _build_freq_map_from_rows(su_vals)
+                freq_maps["TargetUserName_Freq"]  = _build_freq_map_from_rows(tu_vals)
+            elif category == "ProcessCreationEvents":
+                su_vals, cl_vals = [], []
+                for r in rows:
+                    row = dict(r)
+                    n = max(len(row.get("all_timestamps") or []), 1)
+                    su_vals.extend([row.get("subject_username")] * n)
+                    cl_vals.extend([row.get("command_line")] * n)
+                freq_maps["SubjectUserName_Freq"] = _build_freq_map_from_rows(su_vals)
+                freq_maps["CommandLine_Freq"]     = _build_freq_map_from_rows(cl_vals)
+
+            # Raw text column names used to look up fresh freq per occurrence
+            RAW_TEXT_COLS = {
+                "AuthenticationEvents": {
+                    "TargetUserName_Freq": "target_username",
+                    "IpAddress_Freq":      "ip_address",
+                },
+                "AccountManagementEvents": {
+                    "SubjectUserName_Freq": "subject_username",
+                    "TargetUserName_Freq":  "target_username",
+                },
+                "ProcessCreationEvents": {
+                    "SubjectUserName_Freq": "subject_username",
+                    "CommandLine_Freq":     "command_line",
+                },
+            }
+            raw_text_cols = RAW_TEXT_COLS[category]
+
+            def get_feature_val(row: dict, feature: str) -> float:
+                """
+                For _Freq features: look up raw text value in freshly built
+                freq_maps — NOT the old pre-computed freq stored in typed row.
+                For EventID: read directly from typed row.
+                Time features handled separately in the expansion loop.
+                """
+                if feature.endswith("_Freq"):
+                    raw_col = raw_text_cols.get(feature)
+                    raw_val = row.get(raw_col) if raw_col else None
+                    return freq_maps.get(feature, {}).get(raw_val, 0.0)
+                elif feature == "EventID":
+                    v = row.get("event_id")
+                    return float(v) if v is not None else 0.0
+                return 0.0
+
+            # ── Step 2: Expand rows — one training vector per occurrence ──────
+            expanded_rows = []
+            for r in rows:
+                row = dict(r)
+                all_ts = row.get("all_timestamps") or []
+
+                # Parse stored timestamp strings back to EAT datetimes
+                timestamps = []
+                for ts_str in all_ts:
+                    try:
+                        ts_dt = datetime.strptime(
+                            ts_str, "%Y-%m-%d %H:%M:%S"
+                        ).replace(tzinfo=EAT_TZ)
+                        timestamps.append(ts_dt)
+                    except ValueError:
+                        continue
+
+                # Fallback to the typed row's single timestamp
+                if not timestamps:
+                    ts = row.get("timestamp")
+                    if ts is not None:
+                        if ts.tzinfo is None:
+                            ts = ts.replace(tzinfo=EAT_TZ)
+                        timestamps = [ts.astimezone(EAT_TZ)]
+
+                # One training vector per occurrence
+                for ts in timestamps:
+                    vec = []
+                    for feat in feature_cols:
+                        if feat == "Hour":
+                            vec.append(float(ts.hour))
+                        elif feat == "DayOfWeek":
+                            vec.append(float(ts.weekday()))
+                        elif feat == "IsWeekend":
+                            vec.append(1.0 if ts.weekday() >= 5 else 0.0)
+                        else:
+                            # EventID and _Freq features — use fresh freq maps
+                            # NOT the old pre-computed freq stored in typed row
+                            vec.append(get_feature_val(row, feat))
+                    expanded_rows.append(vec)
+
+            if not expanded_rows:
+                _jobs[job_id].update({
+                    "status": "failed",
+                    "message": "No training vectors could be built from the selected rows.",
+                })
+                return
+
+            X = np.array(expanded_rows, dtype=float)
 
             # Train
             model = IsolationForest(contamination=0.1, random_state=42)
@@ -272,15 +387,22 @@ async def _run_retrain(
             pkl_path = os.path.join(model_dir, f"{category}.pkl")
             bak_path = os.path.join(model_dir, f"{category}.bak.pkl")
 
-            # Backup existing
+# Backup existing
             if os.path.exists(pkl_path):
                 shutil.copy2(pkl_path, bak_path)
                 log.info(f"Backed up {pkl_path} → {bak_path}")
 
-            # Save new model
-            with open(pkl_path, "wb") as f:
-                pickle.dump(model, f)
-            log.info(f"Saved new model: {pkl_path} ({training_rows} rows)")
+            model_artifact = {
+                "model": model,
+                "freq_maps": freq_maps,
+                "feature_columns": feature_cols,
+                "category": category,
+                "trained_at": datetime.now(timezone.utc).isoformat(),
+                "training_rows": training_rows,
+            }
+
+            _joblib.dump(model_artifact, pkl_path)
+            log.info(f"Saved new model artifact: {pkl_path} ({training_rows} rows)")
 
             # Update ml_models row
             trained_at = datetime.now(timezone.utc)
@@ -458,7 +580,7 @@ async def rollback_model(
     ml_model.notes = f"Rolled back by {current_user.username} at {rolled_back_at.isoformat()}"
 
     await db.flush()
-
+#where does log_action write to and where does lo write to
     await log_action(
         db=db,
         request=request,
@@ -485,3 +607,27 @@ async def rollback_model(
         message="Rollback successful. Previous model restored.",
         rolled_back_at=rolled_back_at,
     )
+#TODO Contamination parameter should be from request
+# Bootstrap (bootstrap_train.py):
+
+# Reads from operational_events only
+# Reads the raw JSONB fields (PascalCase keys like TargetUserName, IpAddress)
+# Trains the model and saves the .pkl file
+# Writes to ml_models table only
+# Never touches auth_events, account_events, process_events
+
+# Anomaly Engine (anomaly_engine.py):
+
+# Reads from operational_events (unanalyzed rows)
+# Scores them using the model
+# Writes to auth_events, account_events, process_events — these typed rows have the snake_case columns (target_username, ip_address) because they're proper PostgreSQL columns
+# Writes to anomalies
+# Sets analyzed_at on the operational_events rows
+
+# Retrain (retrain.py):
+
+# Reads from the typed tables (auth_events etc.) — snake_case columns — because the analyst is reviewing already-scored events
+# Retrains the model using those rows
+# Saves new .pkl file
+# Updates ml_models
+# Never writes back to the typed tables

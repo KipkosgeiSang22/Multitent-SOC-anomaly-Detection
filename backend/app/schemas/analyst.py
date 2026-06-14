@@ -71,3 +71,15 @@ class DashboardStats(BaseModel):
     unacknowledged_anomalies: int
     open_issues: int
     scheduler_status: list[SchedulerStatusRow]
+
+class PaginatedEvents(BaseModel):
+    total : int
+    page: int
+    page_size : int
+    items :list[AnalystEventRow]
+
+class PaginatedAnomalies(BaseModel):
+    total : int
+    page: int
+    page_size: int
+    items: list[AnomalyRow]

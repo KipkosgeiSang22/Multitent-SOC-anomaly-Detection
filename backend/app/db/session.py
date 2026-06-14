@@ -14,7 +14,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").replace(
 )
 
 engine = create_async_engine(DATABASE_URL, echo=False)
-
+#add pool sizing later
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
@@ -22,4 +22,4 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 class Base(DeclarativeBase):
-    pass
+    pass 

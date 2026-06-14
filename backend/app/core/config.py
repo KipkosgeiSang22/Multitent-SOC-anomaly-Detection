@@ -18,15 +18,28 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     MODEL_BASE_PATH: str = "C:/soc_platform/models"
     SMTP_HOST: str = ""
-    ADMIN_USERNAME : str
-    ADMIN_PASSWORD: str
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+
+    # Anomaly engine
+    AUTH_THRESHOLD: float = -0.1
+    ACCOUNT_THRESHOLD: float = -0.1
+    PROCESS_THRESHOLD: float = -0.15
+    ENGINE_SLEEP_SECONDS: int = 300
+    ENGINE_MOCK_MODE: bool = False
+
+    # Database pool
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    LOG_COLLECTOR_DB_POOL_SIZE: int = 10
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache

@@ -27,7 +27,10 @@ async def debug_exception_handler(request, exc):
     
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_ORIGIN],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://192.168.2.102:5173",  # add your frontend's IP+port
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

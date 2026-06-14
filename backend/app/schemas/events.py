@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, field_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
@@ -39,10 +39,15 @@ class EventRow(BaseModel):
     unread_reply_count: int = 0       # analyst replies not yet seen by THIS user
     model_config = ConfigDict(from_attributes=True)
 
-
+class PaginatedEvents(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[EventRow]
+    
 class ConfirmEventRequest(BaseModel):
     event_id: int
-
+ 
 
 class RaiseIssueRequest(BaseModel):
     event_id: int
@@ -85,7 +90,22 @@ class RaiseIssueV2Request(BaseModel):
         if not v.strip():
             raise ValueError("issue_text cannot be empty")
         return v.strip()
+class AnomalyRow(BaseModel):
+    id: int
+    client_id: int
+    operational_event_id: int
+    anomaly_score: float
+    rule_reason: str
+    is_anomaly: bool
+    created_at: datetime
 
+    model_config = ConfigDict(from_attributes=True)
+
+class PaginatedAnomalies(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[AnomalyRow]
 
 class ResolveIssueRequest(BaseModel):
     issue_id: int

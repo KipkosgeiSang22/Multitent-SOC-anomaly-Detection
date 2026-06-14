@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 
 from app.core import security, dependencies
 from app.schemas import auth as schemas
-from app.models.user import User
+from app.models.user import User 
 from app.models.audit_log import AuditLog
 from app.models.client import Client
 from app.core.config import settings
@@ -73,7 +73,7 @@ async def _send_reset_email(to_email: str, reset_link: str):
             port=settings.SMTP_PORT,
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
-            start_tls=True,
+            start_tls=True, 
         )
     except Exception as e:
         print(f"EMAIL SEND FAILURE: {e}")
@@ -130,10 +130,17 @@ async def login(
                 status_code=403,
                 detail="Your organisation\'s subscription is suspended. Contact your administrator."
             )
-
+    if user.mfa_enabled:
+        temp_token = security.create_mfa_temp_token(user.id)
+        return {
+            "mfa_required": True,
+            "temp_token": temp_token,
+            "access_token": None,
+            "token_type": "bearer"
+        }
     access_token = security.create_access_token({
         "sub": str(user.id), 
-        "role": user.role, 
+        "role": user.role,
         "client_id": user.client_id
     })
     

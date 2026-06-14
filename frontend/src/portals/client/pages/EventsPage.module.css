@@ -23,11 +23,11 @@
   margin: 0;
 }
 
-/* ── Tab bar ── */
+/* ── Tab bar — wraps so ALL tabs are always visible ── */
 .tabBar {
   display: flex;
   gap: 0.25rem;
-  flex-wrap: wrap;
+  flex-wrap: wrap;          /* all tabs visible, no scroll */
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.25rem;
   padding-bottom: 0;
@@ -51,18 +51,14 @@
   bottom: -1px;
 }
 
-.tab:hover {
-  color: var(--text-primary);
-}
+.tab:hover { color: var(--text-primary); }
 
 .tabActive {
   color: var(--blue);
   border-bottom-color: var(--blue);
 }
 
-.tabLabel {
-  white-space: nowrap;
-}
+.tabLabel { white-space: nowrap; }
 
 .badge {
   display: inline-flex;
@@ -129,10 +125,7 @@
   color-scheme: dark;
 }
 
-.dateSep {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
+.dateSep { color: var(--text-secondary); font-size: 0.85rem; }
 
 /* ── States ── */
 .loadingState {
@@ -155,9 +148,7 @@
   animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .empty {
   padding: 3rem;
@@ -210,60 +201,27 @@
   transition: background 0.1s;
 }
 
-.eventRow:hover {
-  background: color-mix(in srgb, var(--blue) 5%, transparent);
-}
+.eventRow:hover { background: color-mix(in srgb, var(--blue) 5%, transparent); }
+.eventRow:last-child { border-bottom: none; }
 
-.eventRow:last-child {
-  border-bottom: none;
-}
+.confirmedRow { background: color-mix(in srgb, var(--green) 7%, transparent); }
+.confirmedRow:hover { background: color-mix(in srgb, var(--green) 12%, transparent); }
 
-.confirmedRow {
-  background: color-mix(in srgb, var(--green) 7%, transparent);
-}
+.issueRow { background: color-mix(in srgb, var(--amber) 7%, transparent); }
+.issueRow:hover { background: color-mix(in srgb, var(--amber) 12%, transparent); }
 
-.confirmedRow:hover {
-  background: color-mix(in srgb, var(--green) 12%, transparent);
-}
-
-.issueRow {
-  background: color-mix(in srgb, var(--amber) 7%, transparent);
-}
-
-.issueRow:hover {
-  background: color-mix(in srgb, var(--amber) 12%, transparent);
-}
-
-/* confirmed + issue both present */
 .confirmedRow.issueRow {
   background: color-mix(in srgb, var(--amber) 8%, color-mix(in srgb, var(--green) 8%, transparent));
 }
 
-td {
-  padding: 0.65rem 1rem;
-  vertical-align: top;
-  color: var(--text-primary);
-}
+td { padding: 0.65rem 1rem; vertical-align: top; color: var(--text-primary); }
 
-.timeCell {
-  min-width: 160px;
-  max-width: 220px;
-}
+.timeCell { min-width: 160px; max-width: 220px; }
 
-.timeSummary {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+.timeSummary { display: flex; flex-direction: column; gap: 2px; }
 
-.timeStamp {
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-}
-
-.timeStamp:first-child {
-  color: var(--text-primary);
-}
+.timeStamp { color: var(--text-secondary); font-size: 0.72rem; }
+.timeStamp:first-child { color: var(--text-primary); }
 
 .fieldCell {
   max-width: 180px;
@@ -272,54 +230,17 @@ td {
   white-space: nowrap;
 }
 
-.statusCell {
-  min-width: 180px;
-}
+.statusCell { min-width: 180px; }
 
-.confirmedBadge {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  color: var(--green);
-}
+.confirmedBadge { display: flex; align-items: flex-start; gap: 0.4rem; color: var(--green); }
+.checkIcon { font-size: 0.9rem; margin-top: 1px; flex-shrink: 0; }
+.confirmedMeta { font-size: 0.7rem; color: var(--green); line-height: 1.4; }
 
-.checkIcon {
-  font-size: 0.9rem;
-  margin-top: 1px;
-  flex-shrink: 0;
-}
+.issueBadge { display: flex; align-items: flex-start; gap: 0.4rem; margin-top: 0.25rem; }
+.flagIcon { color: var(--amber); font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+.issueText { font-size: 0.72rem; color: var(--amber); line-height: 1.4; word-break: break-word; }
 
-.confirmedMeta {
-  font-size: 0.7rem;
-  color: var(--green);
-  line-height: 1.4;
-}
-
-.issueBadge {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  margin-top: 0.25rem;
-}
-
-.flagIcon {
-  color: var(--amber);
-  font-size: 0.9rem;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.issueText {
-  font-size: 0.72rem;
-  color: var(--amber);
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-.actionsCell {
-  min-width: 160px;
-  white-space: nowrap;
-}
+.actionsCell { min-width: 160px; white-space: nowrap; }
 
 .btnConfirm {
   padding: 0.3rem 0.75rem;
@@ -333,15 +254,8 @@ td {
   margin-right: 0.5rem;
   transition: background 0.15s;
 }
-
-.btnConfirm:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--green) 22%, transparent);
-}
-
-.btnConfirm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.btnConfirm:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 22%, transparent); }
+.btnConfirm:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btnRaiseIssue {
   padding: 0.3rem 0.75rem;
@@ -354,12 +268,9 @@ td {
   cursor: pointer;
   transition: background 0.15s;
 }
+.btnRaiseIssue:hover { background: color-mix(in srgb, var(--amber) 20%, transparent); }
 
-.btnRaiseIssue:hover {
-  background: color-mix(in srgb, var(--amber) 20%, transparent);
-}
-
-/* ── Issue input (inline row) ── */
+/* ── Issue thread (inline row) ── */
 .issueInputRow td {
   padding: 0.75rem 1rem;
   background: color-mix(in srgb, var(--amber) 6%, transparent);
@@ -367,11 +278,7 @@ td {
   border-bottom: 1px dashed var(--amber);
 }
 
-.issueInput {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+.issueInput { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .issueTextarea {
   width: 100%;
@@ -387,15 +294,9 @@ td {
   resize: vertical;
   box-sizing: border-box;
 }
+.issueTextarea::placeholder { color: var(--text-secondary); }
 
-.issueTextarea::placeholder {
-  color: var(--text-secondary);
-}
-
-.issueActions {
-  display: flex;
-  gap: 0.5rem;
-}
+.issueActions { display: flex; gap: 0.5rem; }
 
 .btnSubmitIssue {
   padding: 0.35rem 0.9rem;
@@ -409,11 +310,7 @@ td {
   cursor: pointer;
   transition: opacity 0.15s;
 }
-
-.btnSubmitIssue:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.btnSubmitIssue:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btnCancel {
   padding: 0.35rem 0.9rem;
@@ -425,11 +322,7 @@ td {
   font-size: 0.75rem;
   cursor: pointer;
 }
-
-.btnCancel:hover {
-  color: var(--text-primary);
-  border-color: var(--text-secondary);
-}
+.btnCancel:hover { color: var(--text-primary); border-color: var(--text-secondary); }
 
 /* ── Download button ── */
 .btnDownload {
@@ -443,16 +336,10 @@ td {
   cursor: pointer;
   transition: background 0.15s;
 }
+.btnDownload:hover:not(:disabled) { background: color-mix(in srgb, var(--blue) 22%, transparent); }
+.btnDownload:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.btnDownload:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--blue) 22%, transparent);
-}
-
-.btnDownload:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
+/* ── Thread panel ── */
 .threadPanel { margin: 0; border-top: 1px dashed rgba(234,179,8,0.3); background: rgba(15,23,42,0.7); overflow: hidden; }
 .threadHeader { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
 .threadTitle { font-size: 10px; letter-spacing: 0.12em; color: #64748b; font-family: 'IBM Plex Mono', monospace; }
@@ -476,69 +363,117 @@ td {
 .newReplyBadge { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; background: #06b6d4; color: #000; padding: 1px 6px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; }
 .analystReplyBody { font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.5; }
 
-/* Flag buttons */
+/* ── Flag buttons ── */
 .flagOpen { color: #eab308; background: none; border: none; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; }
 .flagOpen:hover { background: rgba(234,179,8,0.1); }
 .flagResolved { color: #10b981; background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
 .flagResolved:hover { background: rgba(16,185,129,0.1); }
 .flagCount { font-size: 10px; background: rgba(234,179,8,0.2); color: #eab308; padding: 0 5px; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; }
 
-
-/* ── Analyst-replied flag (green, pulsing) ── */
 .flagReplied {
   color: #10b981;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  cursor: pointer;
-  font-size: 13px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border-radius: 5px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.3);
+  cursor: pointer; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 5px;
   font-family: 'IBM Plex Mono', monospace;
   animation: replyPulse 2s ease-in-out infinite;
 }
-.flagReplied:hover {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.5);
-}
+.flagReplied:hover { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.5); }
 @keyframes replyPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-  50%       { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  50%       { box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
 }
 
-.flagReplyCount {
-  font-size: 10px;
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
-  padding: 1px 6px;
-  border-radius: 8px;
-  font-family: 'IBM Plex Mono', monospace;
-}
+.flagReplyCount { font-size: 10px; background: rgba(16,185,129,0.2); color: #10b981; padding: 1px 6px; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; }
+.flagResolvedText { font-size: 10px; color: #10b981; font-family: 'IBM Plex Mono', monospace; }
 
-.flagResolvedText {
-  font-size: 10px;
-  color: #10b981;
-  font-family: 'IBM Plex Mono', monospace;
-}
+.unreadReplyRow { background: color-mix(in srgb, #10b981 5%, transparent) !important; }
+.unreadReplyRow:hover { background: color-mix(in srgb, #10b981 9%, transparent) !important; }
 
-/* ── Row tint when there's an unread reply ── */
-.unreadReplyRow {
-  background: color-mix(in srgb, #10b981 5%, transparent) !important;
-}
-.unreadReplyRow:hover {
-  background: color-mix(in srgb, #10b981 9%, transparent) !important;
-}
-
-/* ── Inline "Analyst replied" nudge text in the status cell ── */
 .replyNotice {
-  margin-top: 4px;
-  font-size: 10px;
-  color: #10b981;
-  font-family: 'IBM Plex Mono', monospace;
-  cursor: pointer;
-  letter-spacing: 0.02em;
-  opacity: 0.85;
+  margin-top: 4px; font-size: 10px; color: #10b981;
+  font-family: 'IBM Plex Mono', monospace; cursor: pointer;
+  letter-spacing: 0.02em; opacity: 0.85;
 }
 .replyNotice:hover { opacity: 1; text-decoration: underline; }
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 1rem; }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  /* Tab bar keeps flex-wrap so all tabs remain visible — same as analyst */
+  .tabBar {
+    gap: 0.15rem;
+    margin-bottom: 1rem;
+  }
+
+  .tab {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  /* Period filter wraps naturally */
+  .periodFilter { gap: 0.35rem; }
+  .periodBtn { padding: 0.3rem 0.65rem; font-size: 0.72rem; }
+
+  /* Custom date range stacks */
+  .customRange { flex-direction: column; width: 100%; }
+  .dateInput { width: 100%; }
+
+  /* Table → card layout */
+  .tableWrapper { border: none; overflow-x: visible; }
+
+  .table, .table thead, .table tbody,
+  .table th, .table td, .table tr { display: block; }
+
+  .table thead { display: none; }
+
+  .table tbody tr.eventRow {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .table tbody td {
+    padding: 0.2rem 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+
+  .actionsCell {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    white-space: normal;
+  }
+
+  .btnConfirm, .btnRaiseIssue {
+    flex: 1;
+    text-align: center;
+    margin-right: 0;
+  }
+
+  .issueTextarea { min-width: 0; width: 100%; }
+}

@@ -62,7 +62,7 @@ export default function AnalystAnomaliesPage() {
         params.acknowledged = f.acknowledged === "true";
       }
       const res = await api.get("/analyst/anomalies", { params });
-      setAnomalies(res.data ?? []);
+      setAnomalies(res.data?.items ?? res.data ?? []);
     } catch {
       setError("Failed to load anomalies.");
     } finally {

@@ -7,6 +7,8 @@ from .base import SIEMAdapter
 
 class _NotImplementedAdapter(SIEMAdapter):
     _name: str = "unknown"
+    def __init__(self, base_url: str, creds: dict):
+        raise TypeError("_NotImplementedAdapter cannot be instantiated directly.")
 
     def _ni(self, method: str):
         raise NotImplementedError(

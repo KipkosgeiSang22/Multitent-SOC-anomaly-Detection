@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime,
-    ForeignKey, func, Text, Index
+    ForeignKey, func, Text, Index, text
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from app.db.base import Base
@@ -17,6 +17,7 @@ class OperationalEvent(Base):
     source_host = Column(String, nullable=True)
     fields = Column(JSONB, nullable=False)
     time_summary = Column(Text, nullable=True)
+    all_timestamps = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     group_key = Column(Text, nullable=True)
     analyzed_at = Column(DateTime(timezone=True), nullable=True)
     confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True)

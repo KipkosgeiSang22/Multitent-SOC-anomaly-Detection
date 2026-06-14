@@ -3,7 +3,7 @@ Abstract SIEM adapter interface.
 All concrete adapters must implement every method.
 """
 from abc import ABC, abstractmethod
-from typing import Any
+
 
 
 class SIEMAdapter(ABC):

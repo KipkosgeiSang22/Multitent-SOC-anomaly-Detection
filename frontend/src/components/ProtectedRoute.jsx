@@ -30,4 +30,4 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
 
   // Active child tree context is fully preserved across browser reloads
   return children;
-}
+} 

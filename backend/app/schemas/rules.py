@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -13,15 +13,18 @@ VALID_CATEGORIES = {
     "ProcessCreationEvents",
 }
 VALID_SEVERITIES = {"low", "medium", "high", "critical"}
-VALID_OPERATORS = {"in", "not_in", "eq", "gt", "lt", "contains"}
+VALID_OPERATORS = {"in", "not_in", "eq", "gt", "lt", "contains", "gte", "lte"}
 VALID_AGGREGATIONS: set[Optional[str]] = {"count", "distinct_count", None}
+VALID_LOGIC = {"OR", "AND"}
 
 
-# ── Condition (validates the JSONB blob) ──────────────────────────────────────
+# ── Single condition ──────────────────────────────────────────────────────────
 
 class RuleCondition(BaseModel):
+    """A single field-level condition. Stored flat in JSONB."""
     model_config = ConfigDict(extra="forbid")
 
+    kind: Literal["single"] = "single"   # discriminator field
     field: str
     operator: str
     values: list[Any]
@@ -45,6 +48,60 @@ class RuleCondition(BaseModel):
         return v
 
 
+# ── Compound condition ────────────────────────────────────────────────────────
+
+class CompoundCondition(BaseModel):
+    """
+    Two or more single conditions joined by OR / AND.
+    Aggregation (count/window) is not supported inside compound conditions —
+    each branch must be a simple per-row check.
+
+    Example — OffHoursActivity:
+        {
+            "kind": "compound",
+            "logic": "OR",
+            "conditions": [
+                {"kind": "single", "field": "hour", "operator": "lt", "values": [7]},
+                {"kind": "single", "field": "hour", "operator": "gte", "values": [19]}
+            ]
+        }
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["compound"] = "compound"   # discriminator field
+    logic: str                                # "OR" | "AND"
+    conditions: list[RuleCondition]           # two or more single conditions
+
+    @field_validator("logic")
+    @classmethod
+    def validate_logic(cls, v: str) -> str:
+        if v not in VALID_LOGIC:
+            raise ValueError(f"logic must be one of {sorted(VALID_LOGIC)}")
+        return v
+
+    @field_validator("conditions")
+    @classmethod
+    def validate_min_conditions(cls, v: list) -> list:
+        if len(v) < 2:
+            raise ValueError("compound condition must have at least 2 branches")
+        for branch in v:
+            if branch.aggregation is not None:
+                raise ValueError(
+                    "aggregation is not supported inside compound conditions"
+                )
+        return v
+
+
+# ── Union type used in Create / Update ───────────────────────────────────────
+# Pydantic uses the 'kind' discriminator to pick the right model.
+# The DB stores whichever dict comes out of .model_dump().
+
+AnyCondition = Union[
+    RuleCondition,      # kind="single"  (or omitted — defaults to "single")
+    CompoundCondition,  # kind="compound"
+]
+
+
 # ── Request bodies ────────────────────────────────────────────────────────────
 
 class RuleCreate(BaseModel):
@@ -54,7 +111,7 @@ class RuleCreate(BaseModel):
     rule_name: str
     description: Optional[str] = None
     category: str
-    conditions: RuleCondition
+    conditions: AnyCondition
     severity: str
     enabled: bool = True
 
@@ -74,13 +131,12 @@ class RuleCreate(BaseModel):
 
 
 class RuleUpdate(BaseModel):
-    """All fields optional — PATCH semantics."""
     model_config = ConfigDict(extra="forbid")
 
     rule_name: Optional[str] = None
     description: Optional[str] = None
     category: Optional[str] = None
-    conditions: Optional[RuleCondition] = None
+    conditions: Optional[AnyCondition] = None
     severity: Optional[str] = None
     enabled: Optional[bool] = None
 
@@ -99,7 +155,7 @@ class RuleUpdate(BaseModel):
         return v
 
 
-# ── Response bodies ───────────────────────────────────────────────────────────
+# ── Response bodies (unchanged) ───────────────────────────────────────────────
 
 class RuleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -109,7 +165,7 @@ class RuleResponse(BaseModel):
     rule_name: str
     description: Optional[str]
     category: str
-    conditions: dict
+    conditions: dict        # raw JSONB — whatever shape was stored
     severity: str
     enabled: bool
     created_by: Optional[int]
@@ -130,7 +186,7 @@ class TestResult(BaseModel):
     period_hours: int = 24
     total_events_scanned: int
     matched_count: int
-    matched_events: list[MatchedEvent]  # max 10
+    matched_events: list[MatchedEvent]
 
 
 class SeedResult(BaseModel):

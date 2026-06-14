@@ -76,3 +76,4 @@ class GraylogAuditEntry(BaseModel):
     payload: Optional[Dict[str, Any]] = None
     response_status: Optional[int] = None
     performed_at: Optional[datetime] = None
+ 

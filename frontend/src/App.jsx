@@ -28,10 +28,12 @@ import AuditLogPage from './portals/analyst/pages/AuditLogPage';                
 import IssuesPage from './portals/analyst/pages/IssuesPage';
 import ThreatIntelPage from './portals/analyst/pages/ThreatIntelPage';
 
+import SettingsPage from './portals/client/pages/SettingsPage';
 import ClientPortal from './portals/client/ClientPortal';
 import EventsPage from './portals/client/pages/EventsPage';
 import AnomaliesPage from './portals/client/pages/AnomaliesPage';
 import DownloadsPage from './portals/client/pages/DownloadsPage'; // Bug 5 fix
+import PaymentsPage from './portals/client/pages/PaymentsPage';
 
 // Auth Views
 import Login from './pages/Login';
@@ -123,10 +125,12 @@ export default function App() {
             ISOLATED TENANT CLIENT GATE OPERATIONS
            ========================================================= */}
         <Route path="/client" element={<ProtectedRoute allowedRoles={['client']}><ClientPortal /></ProtectedRoute>}>
+          <Route path="settings" element={<SettingsPage />} />
           <Route index element={<Navigate to="events" replace />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="anomalies" element={<AnomaliesPage />} />
           <Route path="downloads" element={<DownloadsPage />} /> {/* Bug 5 fix */}
+          <Route path="payments" element={<PaymentsPage />} />
         </Route>
 
         {/* Global Fallback Catchall */}

@@ -3,7 +3,7 @@ AdapterFactory — instantiates the correct SIEMAdapter for a client.
 Handles credential decryption (Fernet) here so callers never deal with raw bytes.
 """
 import json
-import logging
+import logging 
 
 from cryptography.fernet import Fernet
 
@@ -20,7 +20,7 @@ def _get_fernet() -> Fernet:
     return Fernet(key)
 
 _ADAPTER_MAP = {
-    "graylog":   GraylogAdapter,
+    "graylog":   GraylogAdapter,#classes
     "elastic":   ElasticAdapter,
     "wazuh":     WazuhAdapter,
     "splunk":    SplunkAdapter,
@@ -57,15 +57,16 @@ def get_adapter(client: dict) -> SIEMAdapter:
 
     if not siem_type:
         raise ValueError(f"Client {client.get('id')} has no siem_type configured")
-    if siem_type not in _ADAPTER_MAP:
-        raise ValueError(
-            f"Unknown siem_type '{siem_type}' for client {client.get('id')}. "
-            f"Supported: {list(_ADAPTER_MAP.keys())}"
-        )
+
     if not base_url:
         raise RuntimeError(f"Client {client.get('id')} has no siem_base_url configured")
 
     creds = _decrypt_creds(raw_creds) if raw_creds else {}
-    adapter_cls = _ADAPTER_MAP[siem_type]
+    adapter_cls = _ADAPTER_MAP.get(siem_type)
+    if adapter_cls is None:
+        raise ValueError(
+            f"Unsupported siem_type '{siem_type}' for client {client.get('id')}. "
+            f"Supported types: {list(_ADAPTER_MAP.keys())}"
+        )
     log.debug("AdapterFactory: client=%s siem_type=%s → %s", client.get("id"), siem_type, adapter_cls.__name__)
-    return adapter_cls(base_url, creds)
+    return adapter_cls(base_url, creds)#object

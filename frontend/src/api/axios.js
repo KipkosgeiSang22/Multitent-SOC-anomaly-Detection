@@ -14,7 +14,7 @@ let _getAccessToken = () => null;
 
 export function registerTokenGetter(fn) {
   _getAccessToken = fn;
-}
+} 
 
 api.interceptors.request.use((config) => {
   const token = _getAccessToken();

@@ -16,8 +16,8 @@ from app.models.audit_log import AuditLog
 from app.models.scheduler_status import SchedulerStatus
 from app.models.event_issue import EventIssue
 from app.schemas.events import (
-    PeriodFilter, RaiseIssueRequest,
-    EventIssueRow, ResolveIssueRequest, DeleteIssueRequest,
+    PeriodFilter, RaiseIssueRequest,PaginatedAnomalies,
+    EventIssueRow, ResolveIssueRequest, DeleteIssueRequest,PaginatedEvents
 )
 from app.schemas.analyst import (
     AnalystEventRow, AnomalyRow, AcknowledgeRequest,
@@ -121,19 +121,21 @@ async def dashboard_stats(
 # GET /analyst/events
 # ---------------------------------------------------------------------------
 
-@router.get("/events", response_model=list[AnalystEventRow])
+@router.get("/events", response_model=PaginatedEvents)
 async def get_events(
     request: Request,
-    client_id: Optional[int] = Query(None),
+    client_id:  Optional[int] = Query(None),
     query_name: Optional[str] = Query(None),
     period: PeriodFilter = Query(PeriodFilter.last_7d),
     start: Optional[datetime] = Query(None),
     end: Optional[datetime] = Query(None),
     confirmed: Optional[bool] = Query(None),
     has_issue: Optional[bool] = Query(None),
-    user: User = Depends(require_analyst),
-    db: AsyncSession = Depends(get_db),
-):
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    user:User = Depends(require_analyst),
+    db:AsyncSession = Depends(get_db),
+    ):
     since = _period_start(period, start)
     until = end if period == PeriodFilter.custom else None
 
@@ -142,24 +144,21 @@ async def get_events(
     confirmer = User.__table__.alias("confirmer")
     issuer = User.__table__.alias("issuer")
 
-    stmt = (
-        select(
-            oe,
-            cl.c.name.label("client_name"),
-            confirmer.c.username.label("confirmed_by_username"),
-            issuer.c.username.label("issue_raised_by_username"),
-        )
-        .select_from(oe)
-        .join(cl, oe.c.client_id == cl.c.id)
-        .outerjoin(confirmer, oe.c.confirmed_by == confirmer.c.id)
-        .outerjoin(issuer, oe.c.issue_raised_by == issuer.c.id)
-        .where(oe.c.timestamp >= since)
-        .order_by(oe.c.timestamp.desc())
-        .limit(500)
+    stmt =( select(
+        oe,
+        cl.c.name.label("client_name"),
+        confirmer.c.username.label("confirmed_by_username"),
+        issuer.c.username.label("issue_raised_by_username")
     )
-
+    .select_from(oe)
+    .join(cl, oe.c.client_id==cl.c.id)
+    .outerjoin(confirmer,oe.c.confirmed_by==confirmer.c.id)
+    .outerjoin(issuer, oe.c.issue_raised_by==issuer.c.id)
+    .where(oe.c.timestamp >= since)
+    .order_by(oe.c.timestamp.desc())
+    )
     if until:
-        stmt = stmt.where(oe.c.timestamp <= until)
+        stmt= stmt.where(oe.c.timestamp <= until)
     if client_id is not None:
         stmt = stmt.where(oe.c.client_id == client_id)
     if query_name is not None:
@@ -172,9 +171,18 @@ async def get_events(
         stmt = stmt.where(oe.c.issue_text != None)
     elif has_issue is False:
         stmt = stmt.where(oe.c.issue_text == None)
-
+    total = (await db.execute(
+        select(func.count()).select_from(stmt.subquery())
+    )).scalar()
+    stmt = stmt.offset((page-1) * page_size).limit(page_size)
     rows = (await db.execute(stmt)).mappings().all()
-    return [AnalystEventRow(**r) for r in rows]
+
+    return PaginatedEvents(
+        total = total,
+        page=page,
+        page_size = page_size,
+        items=[AnalystEventRow(**r) for  r in rows]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -287,7 +295,7 @@ async def download_events(
 # GET /analyst/anomalies
 # ---------------------------------------------------------------------------
 
-@router.get("/anomalies", response_model=list[AnomalyRow])
+@router.get("/anomalies", response_model=PaginatedAnomalies)
 async def get_anomalies(
     request: Request,
     client_id: Optional[int] = Query(None),
@@ -295,34 +303,33 @@ async def get_anomalies(
     layer: Optional[int] = Query(None),
     period: PeriodFilter = Query(PeriodFilter.last_7d),
     start: Optional[datetime] = Query(None),
-    acknowledged: Optional[bool] = Query(None),
-    user: User = Depends(require_analyst),
-    db: AsyncSession = Depends(get_db),
+    acknowledged: Optional[bool]= Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    user:User = Depends(require_analyst),
+    db:AsyncSession = Depends(get_db),
 ):
     since = _period_start(period, start)
+    
+    an= Anomaly.__table__
+    cl=Client.__table__
+    oe=OperationalEvent.__table__
+    acker=User.__table__.alias("acker")
 
-    an = Anomaly.__table__
-    cl = Client.__table__
-    oe = OperationalEvent.__table__
-    acker = User.__table__.alias("acker")
-
-    stmt = (
-        select(
-            an,
-            cl.c.name.label("client_name"),
-            oe.c.fields.label("event_fields"),
-            oe.c.query_name.label("event_query_name"),
-            acker.c.username.label("acknowledged_by_username"),
-        )
-        .select_from(an)
-        .join(cl, an.c.client_id == cl.c.id)
-        .outerjoin(oe, an.c.operational_event_id == oe.c.id)
-        .outerjoin(acker, an.c.acknowledged_by == acker.c.id)
-        .where(an.c.detected_at >= since)
-        .order_by(an.c.detected_at.desc())
-        .limit(500)
+    stmt = (select(
+        an, 
+        cl.c.name.label("client_name"),
+        oe.c.fields.label("event_fields"),
+        oe.c.query_name.label("event_query_name"),
+        acker.c.username.label("acknowledged_by_username")
     )
-
+    .select_from(an)
+    .join(cl,an.c.client_id== cl.c.id)
+    .outerjoin(oe, an.c.operational_event_id==oe.c.id)
+    .outerjoin(acker, an.c.acknowledged_by == acker.c.id)
+    .where(an.c.detected_at >= since)
+    .order_by(an.c.detected_at.desc())
+    )
     if client_id is not None:
         stmt = stmt.where(an.c.client_id == client_id)
     if category is not None:
@@ -333,9 +340,18 @@ async def get_anomalies(
         stmt = stmt.where(an.c.acknowledged_by == None)
     elif acknowledged is True:
         stmt = stmt.where(an.c.acknowledged_by != None)
-
+    
+    total = (await db.execute(
+        select(func.count()).select_from(stmt.subquery())
+    )).scalar()
+    stmt = stmt.offset((page-1) * page_size).limit(page_size)
     rows = (await db.execute(stmt)).mappings().all()
-    return [AnomalyRow(**r) for r in rows]
+    return PaginatedAnomalies(
+        total=total,
+        page=page,
+        page_size=page_size,
+        items=[AnomalyRow(**r) for r in rows]
+    )
 
 
 # ---------------------------------------------------------------------------

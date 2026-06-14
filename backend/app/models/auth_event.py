@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime,
+    Column, Integer, String, Boolean, DateTime,UniqueConstraint,
     Float, ForeignKey, func, Index
 )
 from app.db.base import Base
@@ -7,6 +7,9 @@ from app.db.base import Base
 
 class AuthEvent(Base):
     __tablename__ = "auth_events"
+    __table_args__ = (
+        UniqueConstraint("operational_event_id", name="uq_auth_operational_event"),
+    )
 
     id = Column(Integer, primary_key=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)

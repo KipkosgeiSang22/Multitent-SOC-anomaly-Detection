@@ -10,11 +10,10 @@ import logging
 import os
 import sys
 import time
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  #Python’s built‑in XML parsing libraryim
 from datetime import datetime, timezone, timedelta
-from email.utils import parsedate_to_datetime
-
-import httpx
+from email.utils import parsedate_to_datetime#converts a date string (usually from an email header) into a proper datetime object.
+import httpx#modern third‑party HTTP client library for Python. It’s similar to requests, but more powerful because it supports both synchronous and asynchronous usage.
 from dotenv import load_dotenv
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -52,25 +51,35 @@ MITRE_URL = (
 
 
 # ── Retry helper ──────────────────────────────────────────────────────────────
+#client here means an HTTP client object — a tool for making web requests
 async def _get_with_retry(client: httpx.AsyncClient, url: str,
                           headers: dict = None, params: dict = None,
-                          max_retries: int = 3) -> httpx.Response | None:
+                          max_retries: int = 3,
+                          max_rate_limit_retries: int = 3) -> httpx.Response | None:
     delay = 2
-    for attempt in range(max_retries):
+    attempt = 0
+    rate_limit_attempts = 0
+    while attempt < max_retries:
         try:
             r = await client.get(url, headers=headers or {}, params=params or {},
                                  timeout=30)
             if r.status_code == 429:
+                if rate_limit_attempts >= max_rate_limit_retries:
+                    log.error("Rate limit retries exhausted for %s", url[:60])
+                    return None
                 wait = int(r.headers.get("Retry-After", delay * 2))
-                log.warning("Rate limited by %s — waiting %ss", url[:60], wait)
+                log.warning("Rate limited by %s — waiting %ss (rate limit attempt %s/%s)",
+                            url[:60], wait, rate_limit_attempts + 1, max_rate_limit_retries)
+                rate_limit_attempts += 1
                 await asyncio.sleep(wait)
-                continue
+                continue  # still doesn't burn a real attempt
             r.raise_for_status()
             return r
         except httpx.HTTPStatusError as exc:
             log.warning("HTTP %s from %s (attempt %s)", exc.response.status_code, url[:60], attempt + 1)
         except httpx.RequestError as exc:
             log.warning("Request error %s (attempt %s): %s", url[:60], attempt + 1, exc)
+        attempt += 1  # only real errors count
         await asyncio.sleep(delay)
         delay *= 2
     log.error("All retries exhausted for %s", url[:60])
@@ -118,6 +127,12 @@ async def summarize_with_groq(text_content: str) -> str:
                     continue
                 r.raise_for_status()
                 return r.json()["choices"][0]["message"]["content"].strip()
+    # r.json()                      # full API response as dict
+    # ["choices"]               # list of response options (usually just one)
+    #     [0]                   # first (and only) choice
+    #         ["message"]       # the message object
+    #             ["content"]   # the actual text the AI wrote
+    #                 .strip()  # remove leading/trailing whitespace
         except httpx.HTTPStatusError:
             pass
         except Exception as exc:
@@ -485,3 +500,208 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+# {  NVD
+#   "vulnerabilities": [
+#     {
+#       "cve": {
+#         "id": "CVE-2024-1234",
+#         "published": "2024-01-15T10:30:00.000",
+#         "lastModified": "2024-01-15T12:00:00.000",
+#         "descriptions": [
+#           {
+#             "lang": "en",
+#             "value": "A buffer overflow vulnerability in Example Software version 1.0 allows remote attackers to execute arbitrary code via a crafted HTTP request to the /admin endpoint. The vulnerability exists due to improper input validation in the authentication module."
+#           },
+#           {
+#             "lang": "es",
+#             "value": "Una vulnerabilidad de desbordamiento de búfer..."
+#           }
+#         ],
+#         "metrics": {
+#           "cvssMetricV31": [
+#             {
+#               "cvssData": {
+#                 "baseScore": 9.8,
+#                 "baseSeverity": "CRITICAL",
+#                 "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+#               },
+#               "exploitabilityScore": 3.9,
+#               "impactScore": 5.9
+#             }
+#           ]
+#         },
+#         "references": [
+#           {
+#             "url": "https://example.com/advisory/2024-001",
+#             "source": "vendor"
+#           }
+#         ]
+#       }
+#     }
+#   ],
+#   "totalResults": 1,
+#   "resultsPerPage": 50
+# }
+
+# {  AlienVault
+#   "results": [
+#     {
+#       "id": "65a3f2b8c4d5e6f7a8b9c0d1",
+#       "name": "Lazarus Group Campaign Targeting Financial Institutions",
+#       "description": "A sophisticated threat actor known as Lazarus Group has been observed conducting spear-phishing campaigns targeting financial institutions in Southeast Asia. The campaign uses malicious Excel documents with embedded macros that download a custom backdoor. The backdoor communicates with C2 servers using encrypted HTTP traffic on port 443. Multiple banks in the region have reported incidents consistent with this campaign pattern.",
+#       "created": "2024-01-15T08:30:00Z",
+#       "modified": "2024-01-15T10:00:00Z",
+#       "tags": [
+#         "apt",
+#         "lazarus",
+#         "financial",
+#         "spearphishing",
+#         "backdoor"
+#       ],
+#       "industries": [
+#         "Finance",
+#         "Banking"
+#       ],
+#       "indicators": [
+#         {
+#           "type": "IPv4",
+#           "indicator": "203.0.113.45",
+#           "description": "C2 server"
+#         },
+#         {
+#           "type": "IPv6",
+#           "indicator": "2001:db8::1",
+#           "description": "Secondary C2"
+#         },
+#         {
+#           "type": "domain",
+#           "indicator": "malicious-update.com",
+#           "description": "Phishing domain"
+#         },
+#         {
+#           "type": "FileHash-MD5",
+#           "indicator": "d41d8cd98f00b204e9800998ecf8427e",
+#           "description": "Malicious Excel file"
+#         },
+#         {
+#           "type": "FileHash-SHA256",
+#           "indicator": "e3b0c44298fc1c149afbf4c8996fb924",
+#           "description": "Backdoor binary"
+#         },
+#         {
+#           "type": "URL",
+#           "indicator": "http://malicious-update.com/payload.exe",
+#           "description": "Payload download URL"
+#         }
+#       ]
+#     }
+#   ],
+#   "count": 1,
+#   "next": null,
+#   "previous": null
+# }
+# <?xml version="1.0" encoding="UTF-8"?>   #RSS XML
+# <rss version="2.0">
+#   <channel>
+#     <title>BleepingComputer</title>
+#     <link>https://www.bleepingcomputer.com</link>
+#     <description>BleepingComputer - Security News</description>
+    
+#     <item>
+#       <title>New Ransomware Group Targets Healthcare Organizations</title>
+#       <link>https://www.bleepingcomputer.com/news/security/new-ransomware-targets-healthcare/</link>
+#       <guid>https://www.bleepingcomputer.com/news/security/new-ransomware-targets-healthcare/</guid>
+#       <pubDate>Mon, 15 Jan 2024 08:30:00 +0000</pubDate>
+#       <description>
+#         A new ransomware group called BlackMedic has been observed targeting 
+#         healthcare organizations across Europe and North America. The group 
+#         exploits unpatched VPN vulnerabilities to gain initial access, then 
+#         deploys a custom ransomware payload that encrypts patient records...
+#         (500+ characters of article text)
+#       </description>
+#     </item>
+
+#     <item>
+#       <title>Critical RCE Vulnerability Found in Apache Log4j</title>
+#       <link>https://www.bleepingcomputer.com/news/security/critical-rce-log4j/</link>
+#       <guid>https://www.bleepingcomputer.com/news/security/critical-rce-log4j/</guid>
+#       <pubDate>Mon, 15 Jan 2024 06:00:00 +0000</pubDate>
+#       <description>Short description under 500 chars.</description>
+#     </item>
+
+#   </channel>
+# </rss>
+
+# {  #MITRE
+#   "type": "bundle",
+#   "id": "bundle--1234",
+#   "objects": [
+#     {
+#       "type": "attack-pattern",
+#       "id": "attack-pattern--abc123",
+#       "name": "Spearphishing Attachment",
+#       "description": "Adversaries may send spearphishing emails with a malicious attachment in an attempt to gain access to victim systems. Spearphishing attachment is a specific variant of spearphishing. Spearphishing attachment is different from other forms of spearphishing in that it employs the use of malware attached to an email...(very long description)",
+#       "modified": "2024-01-10T15:00:00.000Z",
+#       "created": "2020-03-02T19:05:18.137Z",
+#       "revoked": false,
+#       "x_mitre_deprecated": false,
+#       "kill_chain_phases": [
+#         {
+#           "kill_chain_name": "mitre-attack",
+#           "phase_name": "initial-access"
+#         }
+#       ],
+#       "external_references": [
+#         {
+#           "source_name": "mitre-attack",
+#           "url": "https://attack.mitre.org/techniques/T1566/001",
+#           "external_id": "T1566.001"
+#         },
+#         {
+#           "source_name": "SANS",
+#           "url": "https://www.sans.org/some-reference",
+#           "description": "Additional reference"
+#         }
+#       ]
+#     },
+#     {
+#       "type": "attack-pattern",
+#       "id": "attack-pattern--def456",
+#       "name": "PowerShell",
+#       "description": "Adversaries may abuse PowerShell commands and scripts for execution...",
+#       "modified": "2024-01-12T10:00:00.000Z",
+#       "revoked": false,
+#       "x_mitre_deprecated": false,
+#       "kill_chain_phases": [
+#         {
+#           "kill_chain_name": "mitre-attack",
+#           "phase_name": "execution"
+#         }
+#       ],
+#       "external_references": [
+#         {
+#           "source_name": "mitre-attack",
+#           "url": "https://attack.mitre.org/techniques/T1059/001",
+#           "external_id": "T1059.001"
+#         }
+#       ]
+#     },
+#     {
+#       "type": "intrusion-set",
+#       "id": "intrusion-set--ghi789",
+#       "name": "Lazarus Group"
+#     },
+#     {
+#       "type": "malware",
+#       "id": "malware--jkl012",
+#       "name": "WannaCry",
+#       "revoked": true
+#     },
+#     {
+#       "type": "course-of-action",
+#       "id": "course-of-action--mno345",
+#       "name": "Some mitigation"
+#     }
+#   ]
+# }

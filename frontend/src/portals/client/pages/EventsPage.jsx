@@ -236,11 +236,7 @@ function IssueThread({ eventId, onClose, onThreadLoaded, onRepliesSeen }) {
   );
 }
 
-// ── FlagButton — always visible, driven by pre-loaded server counts ───────────
-//
-//  unreadCount > 0  →  green pulsing "⚑ N analyst reply/replies"
-//  openCount > 0    →  amber         "⚑ N open"
-//  resolvedOnly     →  dim green     "⚑ resolved"
+// ── FlagButton ────────────────────────────────────────────────────────────────
 
 function FlagButton({ openCount, resolvedCount, unreadCount, onClick }) {
   if (unreadCount > 0) {
@@ -284,7 +280,6 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [showThread, setShowThread] = useState(false);
 
-  // Live issue counts — seeded from server response, updated when thread is opened
   const [openCount, setOpenCount] = useState(event.open_issue_count ?? 0);
   const [resolvedCount, setResolvedCount] = useState(event.resolved_issue_count ?? 0);
   const [unreadCount, setUnreadCount] = useState(event.unread_reply_count ?? 0);
@@ -305,7 +300,6 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
     }
   }
 
-  // IssueThread calls this after loading thread + calling mark-seen
   function handleThreadLoaded({ openCount: o, resolvedCount: r }) {
     setOpenCount(o);
     setResolvedCount(r);
@@ -334,8 +328,8 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
           .filter(Boolean)
           .join(" ")}
       >
-        {/* time_summary */}
-        <td className={styles.timeCell}>
+        {/* Time */}
+        <td className={styles.timeCell} data-label="Time">
           {event.time_summary ? (
             <span className={styles.timeSummary}>
               {event.time_summary.split("|").map((t, i) => (
@@ -347,13 +341,15 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
           )}
         </td>
 
-        {/* dynamic JSONB fields */}
+        {/* Dynamic JSONB fields */}
         {fieldKeys.map((k) => (
-          <td key={k} className={styles.fieldCell}>{event.fields?.[k] ?? "—"}</td>
+          <td key={k} className={styles.fieldCell} data-label={k}>
+            {event.fields?.[k] ?? "—"}
+          </td>
         ))}
 
-        {/* status column */}
-        <td className={styles.statusCell}>
+        {/* Status */}
+        <td className={styles.statusCell} data-label="Status">
           {isConfirmed && (
             <div className={styles.confirmedBadge}>
               <span className={styles.checkIcon}>✓</span>
@@ -365,7 +361,6 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
             </div>
           )}
 
-          {/* Flag renders immediately from pre-loaded counts — no click needed */}
           {(hasAnyIssue || unreadCount > 0) && (
             <div className={styles.issueBadge} style={{ marginTop: isConfirmed ? "0.35rem" : 0 }}>
               <FlagButton
@@ -377,7 +372,6 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
             </div>
           )}
 
-          {/* Inline nudge when there's an unread analyst reply */}
           {unreadCount > 0 && (
             <div className={styles.replyNotice} onClick={handleFlagClick}>
               💬 Analyst replied — click to view
@@ -385,8 +379,8 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
           )}
         </td>
 
-        {/* actions column */}
-        <td className={styles.actionsCell}>
+        {/* Actions */}
+        <td className={styles.actionsCell} data-label="Actions">
           {!isConfirmed && (
             <button className={styles.btnConfirm} onClick={handleConfirm} disabled={confirmLoading}>
               {confirmLoading ? "…" : "Confirm"}
@@ -415,7 +409,7 @@ function EventRow({ event, fieldKeys, onConfirm, onRepliesSeen }) {
   );
 }
 
-// ── main component ────────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function EventsPage() {
   const [queries, setQueries] = useState([]);
@@ -487,9 +481,6 @@ export default function EventsPage() {
     }
   }
 
-  // After any thread marks replies seen:
-  //   1. Refresh global nav badge (ClientPortal listens)
-  //   2. Pull fresh per-event unread counts and patch into state
   async function notifyRepliesSeen() {
     window.dispatchEvent(new Event("soc:replies-seen"));
     try {

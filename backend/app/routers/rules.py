@@ -30,14 +30,14 @@ from app.models.user import User
 from app.schemas.rules import (
     MatchedEvent,
     RuleCreate,
-    RuleResponse,
+    RuleResponse, 
     RuleUpdate,
     SeedResult,
     TestResult,
 )
 
 log = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter() 
 
 # ── LOLBin patterns (mirrors anomaly_processing.py MALICIOUS_TOOLS) ──────────
 LOLBIN_PATTERNS = [
@@ -45,7 +45,7 @@ LOLBIN_PATTERNS = [
     "certutil", "bitsadmin", "wmic", "regsvr32", "mshta", "rundll32",
     "cmstp", "installutil", "csc.exe", "msbuild",
 ]
-
+#TODO Add dropdown for category and severity
 # ── Default rules seeded for every new client ─────────────────────────────────
 DEFAULT_RULES: list[dict] = [
     {
@@ -93,21 +93,38 @@ DEFAULT_RULES: list[dict] = [
             "group_by": None,
         },
     },
-    {
-        "rule_name": "OffHoursActivity",
-        "description": "Authentication events outside 07:00-19:00 EAT",
-        "category": "AuthenticationEvents",
-        "severity": "medium",
-        "conditions": {
-            "field": "hour",
-            "operator": "lt",
-            "values": [7],
-            "aggregation": None,
-            "threshold": None,
-            "window_minutes": None,
-            "group_by": None,
-        },
+{
+    "rule_name": "OffHoursActivity",
+    "description": "Authentication events outside 07:00-19:00 EAT",
+    "category": "AuthenticationEvents",
+    "severity": "medium",
+    "conditions": {
+        "kind": "compound",
+        "logic": "OR",
+        "conditions": [
+            {
+                "kind": "single",
+                "field": "hour",
+                "operator": "lt",
+                "values": [7],
+                "aggregation": None,
+                "threshold": None,
+                "window_minutes": None,
+                "group_by": None,
+            },
+            {
+                "kind": "single",
+                "field": "hour",
+                "operator": "gte",
+                "values": [19],
+                "aggregation": None,
+                "threshold": None,
+                "window_minutes": None,
+                "group_by": None,
+            },
+        ],
     },
+},
     {
         "rule_name": "AccountManipulation",
         "description": "Account created then deleted in rapid succession (4720 + 4726)",
@@ -165,7 +182,8 @@ async def _require_rules_access(
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
+# Used during rule creation, update, deletion, or seeding
+# When a new rule is added (create_rule, seed_rules) or updated (update_rule, toggle_rule), the system logs the action with log_action
 def _rule_to_dict(rule: Layer1Rule) -> dict:
     return {
         "id": rule.id,
@@ -182,13 +200,34 @@ def _rule_to_dict(rule: Layer1Rule) -> dict:
         "updated_at": rule.updated_at.isoformat() if rule.updated_at else None,
     }
 
-
 def _evaluate_condition(cond: dict, row_fields: dict, all_rows: list[dict]) -> tuple[bool, str]:
     """
-    Evaluate one rule condition against a single event row.
+    Evaluate one rule condition (single or compound) against a single event row.
     Returns (matched: bool, reason: str).
-    Mirrors the logic in anomaly_engine.py so dry-run results are consistent.
     """
+    kind = cond.get("kind", "single")
+
+    # ── Compound branch ──────────────────────────────────────────────────────
+    if kind == "compound":
+        logic = cond.get("logic", "OR").upper()
+        branches = cond.get("conditions", [])
+        results = [_evaluate_condition(b, row_fields, all_rows) for b in branches]
+#results is a list of tuples
+        if logic == "OR":
+            for matched, reason in results:
+                if matched:
+                    return True, reason          # first branch that fires
+            return False, ""
+
+        else:  # AND
+            reasons = []
+            for matched, reason in results:
+                if not matched:
+                    return False, ""      # one branch failed → whole thing fails immediately
+                reasons.append(reason)    # all passed → collect all reasons
+            return True, " AND ".join(reasons)  # e.g. "hour gte [8] AND hour lt [19]"
+
+    # ── Single branch (original logic, unchanged) ────────────────────────────
     field = cond.get("field", "")
     operator = cond.get("operator", "")
     values = cond.get("values", [])
@@ -197,7 +236,6 @@ def _evaluate_condition(cond: dict, row_fields: dict, all_rows: list[dict]) -> t
     window_minutes = cond.get("window_minutes")
     group_by = cond.get("group_by")
 
-    # ── Aggregation path (count / distinct_count within a window) ────────────
     if aggregation in ("count", "distinct_count") and threshold is not None:
         row_val = row_fields.get(field)
         if row_val is None:
@@ -212,7 +250,8 @@ def _evaluate_condition(cond: dict, row_fields: dict, all_rows: list[dict]) -> t
             candidates = all_rows
 
         if window_minutes:
-            row_ts = row_fields.get("_ts")
+            row_ts = row_fields.get("_ts")#confirm if timestamp has been set as _ts below
+            # .get checks whether _ts exist before using the actual value
             if row_ts:
                 window_start = row_ts - timedelta(minutes=window_minutes)
                 candidates = [
@@ -225,7 +264,7 @@ def _evaluate_condition(cond: dict, row_fields: dict, all_rows: list[dict]) -> t
                 1 for r in candidates
                 if _field_matches(operator, r.get("fields", {}).get(field), values)
             )
-        else:  # distinct_count
+        else:
             seen = set()
             for r in candidates:
                 v = r.get("fields", {}).get(field)
@@ -241,7 +280,7 @@ def _evaluate_condition(cond: dict, row_fields: dict, all_rows: list[dict]) -> t
             )
         return False, ""
 
-    # ── Simple per-row path ──────────────────────────────────────────────────
+    # Simple per-row
     row_val = row_fields.get(field)
     if row_val is None:
         return False, ""
@@ -260,15 +299,17 @@ def _field_matches(operator: str, value: object, values: list) -> bool:
     if operator == "eq":
         return str(value) == str(values[0]) if values else False
     if operator == "gt":
-        try:
-            return float(value) > float(values[0])
-        except (TypeError, ValueError):
-            return False
+        try: return float(value) > float(values[0])
+        except (TypeError, ValueError): return False
     if operator == "lt":
-        try:
-            return float(value) < float(values[0])
-        except (TypeError, ValueError):
-            return False
+        try: return float(value) < float(values[0])
+        except (TypeError, ValueError): return False
+    if operator == "gte":                              
+        try: return float(value) >= float(values[0])
+        except (TypeError, ValueError): return False
+    if operator == "lte":                              
+        try: return float(value) <= float(values[0])
+        except (TypeError, ValueError): return False
     if operator == "contains":
         val_lower = str(value).lower()
         return any(str(v).lower() in val_lower for v in values)
@@ -359,9 +400,44 @@ async def list_rules(
     )
     rules = result.scalars().all()
     return [RuleResponse.model_validate(r) for r in rules]
+# Reads the attributes of the ORM object (id, client_id, rule_name, conditions, etc.).Validates them against the RuleResponse schema (types, required fields, allowed values).Produces a proper RuleResponse Pydantic model instance
 
 
 # ── POST /rules ───────────────────────────────────────────────────────────────
+# ── POST /rules ───────────────────────────────────────────────────────────────
+
+# TODO (Session 17 — Rule Builder UI):
+# The frontend builds the conditions payload before submitting — the backend
+# accepts whatever shape arrives and Pydantic validates it automatically.
+#
+# Frontend logic needed in the rule creation/edit form:
+#
+# 1. SINGLE CONDITION (1 row):
+#    - Show aggregation fields: count/distinct_count, threshold,
+#      window_minutes, group_by
+#    - Build payload as a flat dict (no "kind" needed — defaults to "single"):
+#      { "field": "EventID", "operator": "in", "values": [4625],
+#        "aggregation": "count", "threshold": 5, "window_minutes": 5,
+#        "group_by": "IpAddress" }
+#
+# 2. COMPOUND CONDITION (2+ rows):
+#    - Hide aggregation fields (not supported inside compound)
+#    - Show OR / AND toggle
+#    - Build payload as compound dict:
+#      { "kind": "compound", "logic": "OR", "conditions": [
+#          { "kind": "single", "field": "hour", "operator": "lt", "values": [7] },
+#          { "kind": "single", "field": "hour", "operator": "gte", "values": [19] }
+#      ]}
+#
+# 3. The buildConditions(rows, logic) function in the frontend decides
+#    which shape to build based on rows.length — the user never picks
+#    between single/compound explicitly.
+#
+# 4. Operators available: in, not_in, eq, gt, lt, gte, lte, contains
+#    Show as a dropdown — same list as VALID_OPERATORS in schemas/rules.py
+#
+# 5. Test rule button calls POST /rules/{rule_id}/test after saving —
+#    shows matched_events from the dry-run result in a preview panel.
 
 @router.post("", response_model=RuleResponse, status_code=status.HTTP_201_CREATED)
 async def create_rule(
@@ -537,7 +613,7 @@ async def test_rule(
     result = await db.execute(
         select(OperationalEvent).where(
             OperationalEvent.client_id == rule.client_id,
-            OperationalEvent.query_name == rule.category,
+            OperationalEvent.query_name == rule.category,#to be checked
             OperationalEvent.timestamp >= since,
         )
     )
