@@ -120,7 +120,8 @@ JSONB is used for the `fields` column because named queries across different cli
 Layer 1 rules evaluate directly against the parsed JSONB fields dict in memory. The Isolation Forest models score an in-memory DataFrame built from the same raw events. The typed tables (auth_events, account_events, process_events) are written as a structured audit record after both scoring passes complete, and are not the input to the ML pipeline
 
 ### Graylog
-<img width="1845" height="933" alt="image" src="https://github.com/user-attachments/assets/1b168a6d-e307-458d-aadb-dac7337dea79" />
+<img width="1902" height="928" alt="image" src="https://github.com/user-attachments/assets/b64a73d0-10f3-4760-8287-6c048d28b90b" />
+
 
 
 ### Wazuh (In Progress)
@@ -162,7 +163,8 @@ Three Isolation Forest models run per client, separated by event category: `Auth
 
 The separation matters because authentication behavior and process creation behavior have fundamentally different statistical distributions. A single model across all event types would produce meaningless anomaly scores.
 
-<img width="1872" height="921" alt="image" src="https://github.com/user-attachments/assets/b89b948c-a735-424e-8256-23da671ff226" />
+<img width="1893" height="930" alt="image" src="https://github.com/user-attachments/assets/e08825cf-af61-4ae0-b89e-019888c225e7" />
+
 
 
 **Feature Engineering**
@@ -185,7 +187,8 @@ Models are stored at `MODEL_BASE_PATH/{client_id}/{category}.pkl`. Before overwr
 
 If a model file is missing or corrupt at runtime, the engine logs a critical error, skips Layer 2 for that client in that cycle, and continues processing other clients. Layer 1 rules still run and `analyzed_at` is still set. One client's model failure never crashes the engine.
 
-<img width="1542" height="632" alt="image" src="https://github.com/user-attachments/assets/7e7893ca-f319-4dec-8a91-81bebccabdd5" />
+<img width="1582" height="820" alt="image" src="https://github.com/user-attachments/assets/ed20bd0b-9754-451d-8250-d557c57b97ee" />
+
 
 
 ---
