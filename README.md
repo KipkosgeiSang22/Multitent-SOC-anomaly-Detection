@@ -339,7 +339,7 @@ NVD_API_KEY=         # nvd.nist.gov/developers/request-an-api-key
 OTX_API_KEY=         # otx.alienvault.com
 
 # AI Summarization (threat intel feed)
-CLAUDE_API_KEY=      # console.anthropic.com
+Groq_API_KEY=      # console.anthropic.com
 
 # Payments , M-Pesa Daraja (Phase 4, build last)
 DARAJA_CONSUMER_KEY=
