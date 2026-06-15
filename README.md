@@ -81,7 +81,8 @@ Normalization → canonical event schema → operational_events (PostgreSQL)
 
 The three scheduler processes are deliberately independent , a crash in the anomaly engine never stops log collection, and a slow threat intel fetch never delays either. Each writes its own heartbeat to `scheduler_status` after every cycle, which the analyst dashboard displays as a live health panel.
 
-<img width="1913" height="922" alt="image" src="https://github.com/user-attachments/assets/05f40572-ed73-499e-bbf2-ec3162528138" />
+<img width="1896" height="916" alt="image" src="https://github.com/user-attachments/assets/d815eadd-0278-4a27-9ba5-8c23e3a482cb" />
+
 
 
 ---
