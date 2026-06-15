@@ -117,7 +117,7 @@ All timestamps are converted from their native format and timezone to `Africa/Na
 
 JSONB is used for the `fields` column because named queries across different clients and SIEMs return different field sets. An "Account Lockouts" query returns EventID, TargetUserName, and IpAddress. An "External IP Activity" query returns different fields entirely. Rather than building a wide, sparse table with hundreds of nullable columns, the varying fields are stored as JSONB per row.
 
-However, JSONB is not used for direct ML feature extraction. The anomaly engine reads the JSONB fields only to populate the fixed-schema typed tables (`auth_events`, `account_events`, `process_events`). Those typed tables have explicit, typed columns and are what the Isolation Forest models and Layer 1 rules actually consume. This separation means JSONB serves its purpose as a flexible raw store without the consistency and performance problems that come from running ML feature pipelines directly against it.
+Layer 1 rules evaluate directly against the parsed JSONB fields dict in memory. The Isolation Forest models score an in-memory DataFrame built from the same raw events. The typed tables (auth_events, account_events, process_events) are written as a structured audit record after both scoring passes complete, and are not the input to the ML pipeline
 
 ### Graylog
 <img width="1845" height="933" alt="image" src="https://github.com/user-attachments/assets/1b168a6d-e307-458d-aadb-dac7337dea79" />
@@ -151,7 +151,7 @@ Each client has an independent rule set stored in `layer1_rules` as structured J
 
 Default rules seeded for every new client cover brute force (more than 5 authentication failures within 5 minutes from the same source IP), privilege escalation (privilege assignment or group membership events originating from non-administrative accounts), suspicious process execution (command lines matching LOLBin patterns, base64-encoded PowerShell, or administrative account enumeration), off-hours activity (events outside 07:00–19:00 EAT), and rapid account manipulation (account creation followed immediately by deletion).
 
-Rules apply to the normalized event data in the typed tables, not to the raw JSONB. Analysts with the `can_edit_layer1_rules` permission can create, modify, or disable rules through a form-based UI. Each save writes a full before/after JSONB snapshot to the audit log. A dry-run mode lets an analyst preview which events in the last 24 hours would have been flagged before committing the rule.
+Rules evaluate directly against the parsed JSONB fields dict in memory, before any typed rows are written. Analysts with the can_edit_layer1_rules permission can create, modify, or disable rules through a form-based UI. Each save writes a full before/after JSONB snapshot to the audit log. A dry-run mode lets an analyst preview which events in the last 24 hours would have been flagged before committing the rule
 
 It is worth noting that the current default rule set references Windows Event IDs because Windows is the environment where this has been deployed first. The rule engine itself is not Windows-specific , rules operate on normalized field values from the typed tables, and when other adapters are live, their events will populate the same typed tables and the same rules will apply without modification.
 <img width="1897" height="928" alt="image" src="https://github.com/user-attachments/assets/22938445-938b-42e0-8cb8-02f9179588fc" />
