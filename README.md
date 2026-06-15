@@ -425,7 +425,6 @@ npm run build
 
 JWT access tokens are held in memory only , never written to `localStorage` or `sessionStorage`. The refresh token lives in an httpOnly cookie that JavaScript cannot read. An Axios interceptor handles silent token refresh transparently.
 
-> **Insert screenshot here:** The client portal events page , named query tabs with notification badges, grouped event table showing first/middle/last timestamps, confirm and raise issue buttons, period filter.
 
 ---
 
