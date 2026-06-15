@@ -67,7 +67,7 @@ Unlike the analyst's portal, the client portal is not an investigation tool. Cli
 ┌───────▼──────────┐ ┌───────▼──────┐    ┌──────────▼────────────┐
 │  SIEMAdapter     │ │  ML Models   │    │  NVD · OTX · RSS      │
 │  (factory.py)    │ │  .pkl per    │    │  MITRE ATT&CK         │
-│                  │ │  client ×    │    │  Claude API            │
+│                  │ │  client ×    │    │  Groq API            │
 │  ✅ Graylog      │ │  category    │    │  (summarization)       │
 │  🔧 Wazuh        │ └──────────────┘    └───────────────────────┘
 │  🔧 Splunk       │
