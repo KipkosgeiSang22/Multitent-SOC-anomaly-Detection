@@ -1,25 +1,47 @@
-# Node.js / React
+# ── Node.js / React ───────────────────────────────────────────────
 node_modules/
 build/
 dist/
 *.log
 
-# Python
+# Vite cache
+.vite/
+frontend/.vite/
+frontend/node_modules/.vite/
+
+# ── Python ────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pdb
 *.sqlite3
 
-# Environment & secrets
+# ── Environment & secrets ─────────────────────────────────────────
 .env
 *.env
 
-# OS files
+# ── ML model artifacts ────────────────────────────────────────────
+# Trained .pkl files are large, machine-specific, and may contain
+# client behavioral data. Never commit them.
+models/
+*.pkl
+*.bak.pkl
+
+# ── Test / scratch files ──────────────────────────────────────────
+backend/schedulers/ano.py
+backend/schedulers/simulate_normal.py
+backend/schedulers/test_coll.py
+backend/app/siem/graytest.py
+frontend/src/portals/ex.js
+
+# ── OS files ──────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# IDE/editor
+# ── IDE / editor ──────────────────────────────────────────────────
 .vscode/
 .idea/
+*.swp
+*.swo
