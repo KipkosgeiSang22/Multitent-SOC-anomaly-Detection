@@ -32,7 +32,7 @@ The platform is in active migration from a Streamlit proof-of-concept to a produ
 
 ## What This Platform Does
 
-Client organizations generate security event logs that flow into a SIEM (currently Graylog; others in progress). This platform sits on top of any supported SIEM, pulling events every three minutes, normalizing them into a canonical intermediate schema before storage, grouping repetitive events within two-hour windows, and running them through a multi-layer anomaly detection engine.
+Client organizations servers generate security event logs that flow into a SIEM (currently Graylog; others in progress). This platform sits on top of any supported SIEM, pulling events every three minutes, normalizing them into a canonical intermediate schema before storage, grouping repetitive events within two-hour windows, and running them through a multi-layer anomaly detection engine.
 
 Layer 1 is deterministic and rule-based. Layer 2 is a per-client, per-category Isolation Forest that scores events against each client's own behavioral baseline. A third layer , threat intelligence correlation , cross-references collected IOCs (IPs, file hashes, domains) against a continuously updated threat intelligence database. All three layers feed into a unified anomaly surface that SOC analysts triage and that client users can optionally be given visibility into.
 
