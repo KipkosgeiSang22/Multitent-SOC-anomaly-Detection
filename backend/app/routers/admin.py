@@ -746,15 +746,16 @@ async def grant_permission(
         event_type="PERMISSION_GRANTED",
         user_id=current_user.id,
         target_id=body.analyst_id,
-        before_update=before,
-        after_update={
-            "analyst_id": body.analyst_id,
+        details={
             "analyst_username": analyst.username,
-            "can_retrain_models": body.can_retrain_models,
-            "can_edit_layer1_rules": body.can_edit_layer1_rules,
-            "can_manage_graylog": body.can_manage_graylog,
-            "client_scope": body.client_scope,
-            "reason": body.reason,
+            "before": before,
+            "after": {
+                "can_retrain_models": body.can_retrain_models,
+                "can_edit_layer1_rules": body.can_edit_layer1_rules,
+                "can_manage_graylog": body.can_manage_graylog,
+                "client_scope": body.client_scope,
+                "reason": body.reason,
+            },
         },
         flush_only=True,
     )

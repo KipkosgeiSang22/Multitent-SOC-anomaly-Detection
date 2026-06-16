@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     DARAJA_CALLBACK_URL: str = ""
     FRONTEND_ORIGIN: str = "http://localhost:5173"
     ENVIRONMENT: str = "development"
-    MODEL_BASE_PATH: str = "C:/soc_platform/models"
+    MODEL_BASE_PATH: str
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""

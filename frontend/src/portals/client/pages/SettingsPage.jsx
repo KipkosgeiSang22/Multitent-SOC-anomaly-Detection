@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "../../../api/axios";
-import QRCode from "qrcode.react";
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function SettingsPage() {
   const [step, setStep] = useState("idle"); // idle | setup | verify | done
@@ -70,7 +70,7 @@ export default function SettingsPage() {
             2. Scan this QR code:
           </p>
           <div style={{ background: "#fff", display: "inline-block", padding: "1rem", marginBottom: "1rem" }}>
-            <QRCode value={qrUrl} size={180} />
+            <QRCodeSVG value={otpUri} size={180} />
           </div>
           <p style={{ color: "#64748b", fontSize: "0.75rem", marginBottom: "1rem" }}>
             Can't scan? Enter this secret manually: <strong style={{ color: "#94a3b8" }}>{secret}</strong>

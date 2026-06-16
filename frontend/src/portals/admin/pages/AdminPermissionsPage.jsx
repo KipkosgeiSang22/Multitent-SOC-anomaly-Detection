@@ -57,7 +57,6 @@ export default function AdminPermissionsPage() {
       fetchActivePermissions();
     } catch { alert('Security assertion framework rejected privilege expansion mapping.'); }
   };
-
   const handleRevoke = async (id) => {
     if (!window.confirm('Revoke elevated capability context? Authorization gates switch down immediately.')) return;
     try {

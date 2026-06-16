@@ -141,7 +141,7 @@ async def login(
     access_token = security.create_access_token({
         "sub": str(user.id), 
         "role": user.role,
-        "client_id": user.client_id
+        "client_id": user.client_id if user.role == "client" else None
     })
     
     await _log_event(db, request, f"{user.role.upper()}_LOGIN", user_id=user.id)
@@ -206,7 +206,7 @@ async def mfa_verify(
         raise HTTPException(status_code=401, detail="Invalid MFA code")
 
     access_token = security.create_access_token(
-        {"sub": str(user.id), "role": user.role, "client_id": user.client_id}
+        {"sub": str(user.id), "role": user.role, "client_id": user.client_id if user.role == "client" else None}
     )
     refresh_token = security.create_refresh_token({"sub": str(user.id), "version":user.refresh_token_version})
 
@@ -254,7 +254,7 @@ async def refresh(
 
     # Rotate: issue new tokens, old one is implicitly invalidated by expiry
     new_access = security.create_access_token(
-        {"sub": str(user.id), "role": user.role, "client_id": user.client_id}
+        {"sub": str(user.id), "role": user.role, "client_id": user.client_id if user.role == "client" else None}
     )
     new_refresh = security.create_refresh_token({"sub": str(user.id), "version":user.refresh_token_version})
 

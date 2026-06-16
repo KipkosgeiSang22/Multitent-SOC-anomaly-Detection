@@ -54,7 +54,7 @@ const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const form = new URLSearchParams();
-form.append('username', username);
+form.append('username', username); 
 form.append('password', password);
 const { data } = await api.post('/auth/login', form, {
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -159,7 +159,7 @@ const { data } = await api.post('/auth/login', form, {
     }
   },
 
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null }),//when a use dismisses an error
 }));
 
 // Wire the axios interceptor to this store.

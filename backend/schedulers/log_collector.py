@@ -81,7 +81,7 @@ DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
 
 # ── CONCURRENCY AND RETRY CONSTANTS ──────────────────────────────────────────
 MAX_CONCURRENT_FETCHES   = int(os.getenv("LOG_COLLECTOR_CONCURRENCY", "8"))
-DEFAULT_LOOKBACK_SECONDS = int(os.getenv("LOG_COLLECTOR_LOOKBACK_SECONDS", str(24 * 3600)))
+DEFAULT_LOOKBACK_SECONDS = int(os.getenv("LOG_COLLECTOR_LOOKBACK_SECONDS", str(24 *3 * 3600)))
 MAX_RETRIES              = 3
 RETRY_BASE_SEC           = 2   # backoff: 2s, 4s, 8s
 
@@ -184,9 +184,9 @@ async def process_client_telemetry(
                 f"Syncing '{query_name}' for client [{client_id}] via [{siem_type.upper()}]."
             )
 
-            lookback_seconds = int(
-                query_config.get("time_range") or DEFAULT_LOOKBACK_SECONDS
-            )
+            lookback_seconds = int(DEFAULT_LOOKBACK_SECONDS)
+               # query_config.get("time_range") or DEFAULT_LOOKBACK_SECONDS
+            # )
 
             # Fetch raw events
             try:
@@ -229,6 +229,9 @@ async def process_client_telemetry(
                 raw_time_str = row.get("timestamp")
                 source_host = row.get("source_host", "UNKNOWN_HOST_NODE")
                 fields_data = row.get("fields", {})
+                if not isinstance(fields_data, dict):
+                    fields_data = {"raw_log_payload": str(fields_data)}
+                fields_data_json = json.dumps(fields_data)  # serialize for asyncpg
 
                 if not raw_time_str:
                     continue
@@ -267,7 +270,10 @@ async def process_client_telemetry(
 
                 # Prepare summary + timestamps
                 initial_str = eat_dt_truncated.strftime("%Y-%m-%d %H:%M:%S")
-                all_ts, updated_summary = compute_time_summary([eat_dt_truncated])
+                all_ts_json = json.dumps([initial_str])
+                updated_summary = initial_str
+                # all_ts, updated_summary = compute_time_summary([eat_dt_truncated])
+                # all_ts_json = json.dumps(all_ts)  
 
                 # UPSERT: insert or update in one query
                 result = await conn.fetchrow(
@@ -286,9 +292,9 @@ async def process_client_telemetry(
                     fingerprint,
                     eat_dt_truncated,
                     source_host,
-                    fields_data,
+                    fields_data_json,   # ← was fields_data (raw dict); now JSON string for asyncpg
                     updated_summary,
-                    all_ts,
+                    all_ts_json,
                     group_key,
                 )
                 if result:
@@ -318,6 +324,7 @@ async def process_client_telemetry(
                         merged_ts_list, merged_summary = compute_time_summary(
                             existing_datetimes + [eat_dt_truncated]
                         )
+                        merged_ts_json = json.dumps(merged_ts_list)
 
                         await conn.execute(
                             """
@@ -327,7 +334,7 @@ async def process_client_telemetry(
                                 timestamp      = $3
                             WHERE id = $4
                             """,
-                            merged_ts_list,
+                            merged_ts_json,
                             merged_summary,
                             eat_dt_truncated,   # ← latest occurrence timestamp, for use in anomaly detection
                             existing["id"],
@@ -451,13 +458,12 @@ async def main():
                 tasks.append(
                     process_client_telemetry(pool, dict(client), dict(query_config), sem, adapter)
                 )
-#                 tasks = [
+#     tasks = [
 #     process_client_telemetry(pool, {"id":1,"name":"Acme Corp"}, {"id":10,"query_name":"failed_logins"}, sem_for_client1),
 #     process_client_telemetry(pool, {"id":1,"name":"Acme Corp"}, {"id":11,"query_name":"suspicious_files"}, sem_for_client1),
 #     process_client_telemetry(pool, {"id":2,"name":"Beta Ltd"}, {"id":12,"query_name":"account_creation"}, sem_for_client2),
 #     process_client_telemetry(pool, {"id":2,"name":"Beta Ltd"}, {"id":13,"query_name":"password_resets"}, sem_for_client2),
 # ]
-
 
         # Dispatch all tasks concurrently; collect results (or exceptions) as they finish.
         results = await asyncio.gather(*tasks, return_exceptions=True)

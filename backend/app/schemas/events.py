@@ -93,11 +93,17 @@ class RaiseIssueV2Request(BaseModel):
 class AnomalyRow(BaseModel):
     id: int
     client_id: int
-    operational_event_id: int
-    anomaly_score: float
-    rule_reason: str
-    is_anomaly: bool
-    created_at: datetime
+    operational_event_id: Optional[int] = None
+    typed_event_id: Optional[int] = None
+    category: str
+    layer: int
+    anomaly_type: str
+    anomaly_score: Optional[float] = None   # nullable in DB — L1 rules have no score
+    details: Optional[dict] = None
+    is_false_positive: bool = False
+    detected_at: datetime                   # DB column is detected_at, not created_at
+    acknowledged_by: Optional[int] = None
+    acknowledged_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 

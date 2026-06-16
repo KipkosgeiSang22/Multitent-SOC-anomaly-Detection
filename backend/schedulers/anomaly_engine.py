@@ -46,8 +46,8 @@ log = logging.getLogger("anomaly_engine")
 
 # ── Config ────────────────────────────────────────────────────────────────────
 DATABASE_URL = os.environ["DATABASE_URL"]
-MODEL_BASE_PATH = os.getenv("MODEL_BASE_PATH", "/opt/soc_platform/models")
-AUTH_THRESHOLD = float(os.getenv("AUTH_THRESHOLD", "-0.1"))
+MODEL_BASE_PATH = os.getenv("MODEL_BASE_PATH", "C:/Users/ADMIN/Desktop/Model/soc_platform/models")
+AUTH_THRESHOLD = float(os.getenv("AUTH_THRESHOLD", "-0.1")) 
 ACCOUNT_THRESHOLD = float(os.getenv("ACCOUNT_THRESHOLD", "-0.1"))
 PROCESS_THRESHOLD = float(os.getenv("PROCESS_THRESHOLD", "-0.15"))
 SLEEP = int(os.getenv("ENGINE_SLEEP_SECONDS", "300"))

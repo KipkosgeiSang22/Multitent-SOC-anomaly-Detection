@@ -262,3 +262,9 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+#ALTER TABLE scheduler_status
+#   ADD CONSTRAINT scheduler_status_process_name_key UNIQUE (process_name);
+# ALTER TABLE operational_events
+# ALTER COLUMN all_timestamps TYPE TEXT[];

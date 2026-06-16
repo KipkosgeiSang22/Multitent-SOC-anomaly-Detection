@@ -79,7 +79,6 @@ class GraylogAdapter(SIEMAdapter):
                 "fields": _DEFAULT_FIELDS,
                 "sort": "timestamp:desc",
             })
-            data.raise_for_status()
             messages = data.get("messages", [])
             return [m["message"] for m in messages]
         except httpx.HTTPStatusError as e:
@@ -91,7 +90,8 @@ class GraylogAdapter(SIEMAdapter):
             raise
         except (httpx.ConnectError, httpx.TimeoutException) as e:
             log.error("Graylog connection error for %s: %s", self.base_url, e)
-            raise       
+            raise
+     
 
     async def get_inputs(self) -> list[dict]:
         data = await self._get("/api/system/inputs")

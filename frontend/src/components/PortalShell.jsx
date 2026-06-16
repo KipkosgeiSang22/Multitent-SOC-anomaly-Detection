@@ -133,10 +133,7 @@ export default function PortalShell({ nav, roleLabel, accentColor, outletContext
               <span /><span /><span />
             </button>
 
-            <div className={styles.statusBadge} style={{ '--accent': accentColor }}>
-              <span className={styles.statusDot} />
-              LIVE
-            </div>
+
           </div>
           <div className={styles.topbarRight}>
             <span className={styles.topbarTime} suppressHydrationWarning>
