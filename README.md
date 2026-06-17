@@ -36,7 +36,7 @@ Client organizations servers generate security event logs that flow into a SIEM 
 
 Layer 1 is deterministic and rule-based. Layer 2 is a per-client, per-category Isolation Forest that scores events against each client's own behavioral baseline. A third layer , threat intelligence correlation , cross-references collected IOCs (IPs, file hashes, domains) against a continuously updated threat intelligence database. All three layers feed into a unified anomaly surface that SOC analysts triage and that client users can optionally be given visibility into.
 
-Unlike the analyst's portal, the client portal is not an investigation tool. Client users are not expected to hunt threats , they confirm events they recognize as legitimate activity within their organization and raise issues on anything that looks wrong. This reduces unnecessary back-and-forth between the MSSP and its clients, keeps clients informed without overwhelming them, and builds an explicit confirmation trail that analysts can see. Client users never have access to anomaly scores, detection logic, or any data belonging to another organization.
+Unlike the analyst's portal, the client portal is not an investigation tool. Client users(IT Teams) are not expected to hunt threats , they confirm events they recognize as legitimate activity within their organization and raise issues on anything that looks wrong. This reduces unnecessary back-and-forth between the MSSP and its clients, keeps clients informed without overwhelming them, and builds an explicit confirmation trail that analysts can see. Client users never have access to anomaly scores, detection logic, or any data belonging to another organization.
 
 ---
 
